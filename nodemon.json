@@ -1,0 +1,5 @@
+{
+	"ignore": ["dist/*","**/*.test.js", "**/*.spec.js", ".git"],
+	"watch": ["src"],
+	"exec": "babel-node src/index.js"
+}

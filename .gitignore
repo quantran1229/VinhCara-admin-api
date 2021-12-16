@@ -1,0 +1,12 @@
+dist
+logs
+node_modules
+.env_*
+.env*
+deploy-*.sh
+package-lock.json
+mediafiles
+models/*
+migrations/*
+config/*
+seeders/*
