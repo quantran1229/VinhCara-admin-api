@@ -47,21 +47,10 @@ jobs:
           remote_port: ${{ secrets.DEPLOY_DEV_PORT }}
           remote_user: ${{ secrets.DEPLOY_DEV_USER }}
           remote_key: ${{ secrets.SSH_DEV_PRIVATE_KEY }}
-      - name: Restart docker no.0
+      - name: Restart docker
         uses: garygrossgarten/github-action-ssh@release
         with:
-          command: docker restart ${{ secrets.DEV_CONTAINER_NAME }}-0
-          port: ${{secrets.DEPLOY_DEV_PORT}}
-          host: ${{secrets.DEPLOY_DEV_HOST}}
-          username: ${{ secrets.DEPLOY_DEV_USER }}
-          privateKey: ${{ secrets.SSH_DEV_PRIVATE_KEY }}
-      - name: Sleep for 45 seconds
-        run: sleep 45s
-        shell: bash
-      - name: Restart docker no.1
-        uses: garygrossgarten/github-action-ssh@release
-        with:
-          command: docker restart ${{ secrets.DEV_CONTAINER_NAME }}-1
+          command: docker restart ${{ secrets.DEV_CONTAINER_NAME }}
           port: ${{secrets.DEPLOY_DEV_PORT}}
           host: ${{secrets.DEPLOY_DEV_HOST}}
           username: ${{ secrets.DEPLOY_DEV_USER }}

@@ -1,0 +1,11 @@
+version: '2.1'
+
+services:
+  vcr-admin-api:
+    image: quan1229/vcr-admin-api
+    build: .
+    container_name: vcr-admin-api
+    volumes:
+        - /home/backend/VinhCara/admin-api/app:/app
+        - /home/backend/VinhCara/admin-api/logs:/logs
+        - /home/backend/VinhCara/admin-api/keys:/keys
