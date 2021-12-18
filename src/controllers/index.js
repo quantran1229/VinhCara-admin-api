@@ -20,6 +20,7 @@ import PolicyController from './policyController';
 import LuxuryJewelleryController from './luxuryJewelleryController';
 import UserTypeController from './userTypeController';
 import PermissionController from './permissionController';
+import CustomerController from './customerController';
 
 module.exports = {
     HealthController,
@@ -43,5 +44,6 @@ module.exports = {
     PolicyController,
     LuxuryJewelleryController,
     UserTypeController,
-    PermissionController
+    PermissionController,
+    CustomerController
 }

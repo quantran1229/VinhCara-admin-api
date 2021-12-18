@@ -57,7 +57,13 @@ module.exports = (sequelize, DataTypes) => {
       WishlistLog.belongsTo(models.Jewellery, {
         foreignKey: 'productCode',
         targetKey: 'productCode',
-        as: 'jewellery',
+        as: 'jewelleryInfo',
+        constraints: false
+      });
+      WishlistLog.belongsTo(models.DiamondSerial, {
+        foreignKey: 'productCode',
+        targetKey: 'serial',
+        as: 'diamondInfo',
         constraints: false
       });
     }
