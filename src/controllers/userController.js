@@ -389,7 +389,7 @@ export default class UserController {
             }, pager));
             res.setSuccess({
                 count: result.count,
-                data: result.rows
+                list: result.rows
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {

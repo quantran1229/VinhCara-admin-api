@@ -271,7 +271,7 @@ export default class WishlistController {
             // Return list
             res.setSuccess({
                 count: result[0],
-                data: result[1]
+                list: result[1]
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
@@ -386,7 +386,7 @@ export default class WishlistController {
             ])
             res.setSuccess({
                 count: resultFromDatabase[1],
-                data: resultFromDatabase[0]
+                list: resultFromDatabase[0]
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
