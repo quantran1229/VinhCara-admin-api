@@ -13,6 +13,10 @@ const sequelize = new Sequelize(dbConfig.database, dbConfig.username, dbConfig.p
   host: dbConfig.host,
   dialect: dbConfig.dialect,
   logging: dbConfig.logging ? Logger.sql.bind(this) : false,
+  dialectOptions: {
+    useUTC: false
+  },
+  timezone: "+07:00",
   pool: {
     max: 15,
     min: 0,
