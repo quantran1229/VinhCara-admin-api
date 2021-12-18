@@ -129,17 +129,17 @@ export default class OrderController {
             }
             if (query.dateFrom != null && query.dateTo != null) {
                 condition.createdAt = {
-                    [Op.between]: [dayjs(query.dateFrom, 'YYYYMMDD').toISOString(), dayjs(query.dateTo, 'YYYYMMDD').toISOString()]
+                    [Op.between]: [dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString(), dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()]
                 };
             } else
             if (query.dateFrom) {
                 condition.createdAt = {
-                    [Op.gte]: dayjs(query.dateFrom, 'YYYYMMDD').toISOString()
+                    [Op.gte]: dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString()
                 };
             } else
             if (query.dateTo) {
                 condition.createdAt = {
-                    [Op.lte]: dayjs(query.dateTo, 'YYYYMMDD').toISOString()
+                    [Op.lte]: dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()
                 };
             }
             let pager = paging(query);
