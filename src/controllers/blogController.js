@@ -171,7 +171,7 @@ export default class BLogController {
             } = ctx.request.body;
             let checkDuplicateSlug = await Blog.findOne({
                 where: {
-                    slug: slug
+                    slug: buildSlug(slug)
                 }
             })
             if (checkDuplicateSlug) {
