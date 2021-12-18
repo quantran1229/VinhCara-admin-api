@@ -205,7 +205,8 @@ export default class CustomerController {
                 gender,
                 maritalStatus,
                 avatar,
-                password
+                password,
+                status
             } = ctx.request.body;
             // Get current customer id from token
             let updateInfo = {};
@@ -270,6 +271,10 @@ export default class CustomerController {
                 const saltRounds = Constant.instance.DEFAULT_CUSTOMER_SALT_ROUND;
                 let hashPassword = bcrypt.hashSync(password, saltRounds);
                 updateInfo.password = hashPassword;
+            }
+            if (status)
+            {
+                updateInfo.status = status;
             }
             // update
             customer = await customer.update(updateInfo);
