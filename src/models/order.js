@@ -24,8 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       PROCESSING: 2,
       SHIPPING: 3,
       DONE: 4,
-      ERROR_ON_ODOO: -2,
-      CANCEL: -3,
+      CANCEL: -2,
       RETURNED: -4
     }
     static PAYMENT_STATUS = {
