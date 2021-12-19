@@ -213,7 +213,6 @@ export default class SavedAddressController {
                     cityId,
                     districtId,
                     providenceId,
-                    cityId,
                     recieverName,
                     phone,
                     type,

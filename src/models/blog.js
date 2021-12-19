@@ -22,7 +22,11 @@ module.exports = (sequelize, DataTypes) => {
                 sourceKey: 'id',
                 as: 'listblogToTags'
             })
-            //Blog.belongsToMany(models.Tag, { through: models.BlogToTag, as: 'tags' })
+            Blog.belongsToMany(models.Tag, {
+                through: models.BlogToTag,
+                as: 'tags',
+                foreignKey: 'blogId',
+            });
         }
     };
     Blog.init({
@@ -40,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
         sequelize,
         tableName: 'blogs',
         modelName: 'Blog',
-        timestamps: false,
+        timestamps: true,
         defaultScope: {
             where: {
                 status: Blog.STATUS.ACTIVE
