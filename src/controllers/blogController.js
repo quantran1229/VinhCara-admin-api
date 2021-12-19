@@ -24,6 +24,7 @@ import {
 } from '../utils/utils'
 import dayjs from 'dayjs'
 import {isEqual} from 'lodash'
+import {request} from "chai";
 
 const res = new Response();
 
@@ -97,13 +98,6 @@ export default class BLogController {
                         attributes: ['id', 'name', 'slug'],
                         where: categoryCondition
                     },
-                    // {
-                    //     model: BlogToTag,
-                    //     as: 'listblogToTags',
-                    //     // required: Object.keys(tagCondition).length > 0 ? true : false,
-                    //     attributes: ['tagId'],
-                    //     where: tagCondition,
-                    // }
                     {
                         model: Tag,
                         as: 'tags',
@@ -144,9 +138,9 @@ export default class BLogController {
                         attributes: ['id', 'name']
                     },
                     {
-                        model: BlogToTag,
-                        as: 'listblogToTags',
-                        attributes: ['tagId']
+                        model: Tag,
+                        as: 'tags',
+                        attributes: ['id', 'title', 'link']
                     }
                 ],
             })
@@ -222,9 +216,19 @@ export default class BLogController {
                         tagId: tagId
                     })
                 }))
-                blog.dataValues.listblogToTags = listBlogToTags
             }
-            res.setSuccess(blog, Constant.instance.HTTP_CODE.Created);
+            let blogNew = await Blog.findOne({
+                where: {
+                    id: blog.id
+                },
+                include: [
+                    {
+                        model: Tag,
+                        as: 'tags'
+                    }
+                ]
+            })
+            res.setSuccess(blogNew, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);
         } catch (e) {
             Logger.error('postCreateNewBlog ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
@@ -243,7 +247,7 @@ export default class BLogController {
                 publishAt,
                 mediaFiles,
                 preview,
-                tagIds } = ctx.request.body || {};
+                tagIds } = ctx.request.body;
             //const t = await db.sequelize.transaction();
             let blogOld = await Blog.findOne({
                 where: {
@@ -251,8 +255,8 @@ export default class BLogController {
                 },
                 include: [
                     {
-                        model: BlogToTag,
-                        as: 'listblogToTags'
+                        model: Tag,
+                        as: 'tags'
                     }
                 ]
             })
@@ -316,7 +320,7 @@ export default class BLogController {
                     id: id,
                 },
             });
-            if(tagIds && tagIds.length && !isEqual(tagIds.sort(), blogOld.listblogToTags.map(item=> item.tagId).sort())) {
+            if(tagIds && tagIds.length && !isEqual(tagIds.sort(), blogOld.tags.map(item=> item.id).sort())) {
                 await BlogToTag.destroy({
                     where: {
                         blogId: id,
@@ -335,8 +339,8 @@ export default class BLogController {
                 },
                 include: [
                     {
-                        model: BlogToTag,
-                        as: 'listblogToTags'
+                        model: Tag,
+                        as: 'tags'
                     }
                 ]
             })
@@ -344,6 +348,70 @@ export default class BLogController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('putUpdateBlog ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+    static putUpdateSEOBlog = async (ctx, next) => {
+        try {
+            const {id} = ctx.request.params
+            const {seoInfo} = ctx.request.body
+            let updateInfo = {}
+            let blogOld = await Blog.findOne({
+                where: {
+                    id: id
+                },
+                attributes: ['id', 'seoInfo']
+            })
+            if (seoInfo && !isEqual(seoInfo, blogOld.seoInfo)) {
+                updateInfo.seoInfo = seoInfo
+            }
+            await Blog.update(updateInfo, {
+                where: {
+                    id: id,
+                },
+            });
+            let blogNew = await Blog.findOne({
+                where: {
+                    id: id
+                },
+                include: [
+                    {
+                        model: Tag,
+                        as: 'tags'
+                    }
+                ]
+            })
+            res.setSuccess(blogNew, Constant.instance.HTTP_CODE.Created);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putUpdateSeoBlog ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+    static deleteBlog = async (ctx, next) => {
+        const t = await db.sequelize.transaction();
+        try {
+            const { id } = ctx.request.params
+            await Blog.destroy({
+                where: {
+                    id: id,
+                },
+                transaction: t,
+            })
+            await BlogToTag.destroy({
+                where: {
+                    blogId: id,
+                },
+                transaction: t,
+            })
+            await t.commit();
+            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Created);
+            return res.send(ctx);
+        } catch (e) {
+            await t.rollback();
+            Logger.error('deleteBlog ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
