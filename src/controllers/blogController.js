@@ -10,7 +10,8 @@ import db, {
     Blog,
     BlogType,
     BlogToTag,
-    Tag, User
+    Tag,
+    User
 } from '../models';
 import Logger from '../utils/logger';
 import Response from '../utils/response';
@@ -18,7 +19,9 @@ import Constant from '../constants';
 import {
     paging
 } from '../utils/utils'
-import {buildSlug} from '../utils/utils'
+import {
+    buildSlug
+} from '../utils/utils'
 import dayjs from 'dayjs'
 
 const res = new Response();
@@ -62,7 +65,7 @@ export default class BLogController {
             }
             let tagCondition = {}
             if (query.tagId) {
-                tagCondition.tagId = query.tagId;
+                tagCondition.id = query.tagId;
             }
             let order = [
                 ['publishAt', 'DESC']
@@ -86,28 +89,33 @@ export default class BLogController {
                 where: condition,
                 order: order,
                 attributes: ['id', 'type', 'title', 'slug', 'status', 'createdBy', 'createdAt', 'updatedAt', 'publishAt', 'seoInfo', 'mediaFiles', 'preview'],
-                include: [
-                    {
+                include: [{
                         model: BlogType,
                         as: 'blogTypeInfo',
                         required: Object.keys(categoryCondition).length > 0 ? true : false,
                         attributes: ['id', 'name', 'slug'],
                         where: categoryCondition
                     },
+                    // {
+                    //     model: BlogToTag,
+                    //     as: 'listblogToTags',
+                    //     // required: Object.keys(tagCondition).length > 0 ? true : false,
+                    //     attributes: ['tagId'],
+                    //     where: tagCondition,
+                    // }
                     {
-                        model: BlogToTag,
-                        as: 'listblogToTags',
+                        model: Tag,
+                        as: 'tags',
                         required: Object.keys(tagCondition).length > 0 ? true : false,
-                        attributes: ['tagId'],
                         where: tagCondition,
+                        attributes: ['id', 'title', 'link']
                     }
                 ]
             }, pager));
-            if (!result) {
-                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
-                return res.send(ctx);
-            }
-            res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
+            res.setSuccess({
+                count: result.count,
+                list: result.rows
+            }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('getListBlogs ' + e.message + ' ' + e.stack);
@@ -132,10 +140,10 @@ export default class BLogController {
             let respBlogInfo = await Blog.findOne({
                 where: condition,
                 include: [{
-                    model: BlogType,
-                    as: 'blogTypeInfo',
-                    attributes: ['id', 'name']
-                },
+                        model: BlogType,
+                        as: 'blogTypeInfo',
+                        attributes: ['id', 'name']
+                    },
                     {
                         model: BlogToTag,
                         as: 'listblogToTags',
@@ -187,11 +195,11 @@ export default class BLogController {
                         id: tagId
                     }
                 })
-                if(!tag) {
+                if (!tag) {
                     notFoundTag.push(tagId)
                 }
             }
-            if (notFoundTag.length >0 ) {
+            if (notFoundTag.length > 0) {
                 res.setError(`Tag ${notFoundTag.join(', ')} not found`, Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
@@ -208,7 +216,7 @@ export default class BLogController {
                 createdBy: ctx.state.user.id,
             });
             if (blog) {
-                let listBlogToTags =await Promise.all(tagIds.map(async (tagId) => {
+                let listBlogToTags = await Promise.all(tagIds.map(async (tagId) => {
                     return BlogToTag.create({
                         blogId: blog.id,
                         tagId: tagId

@@ -22,7 +22,11 @@ module.exports = (sequelize, DataTypes) => {
                 sourceKey: 'id',
                 as: 'listblogToTags'
             })
-            //Blog.belongsToMany(models.Tag, { through: models.BlogToTag, as: 'tags' })
+            Blog.belongsToMany(models.Tag, {
+                through: models.BlogToTag,
+                as: 'tags',
+                foreignKey: 'blogId',
+            });
         }
     };
     Blog.init({
