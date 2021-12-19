@@ -49,15 +49,3 @@ router.put('/blogs/seo/:id', jwtValidate, BlogController.putUpdateSEOBlog)
 //delete blog
 router.delete('/blogs/:id', jwtValidate, BlogController.deleteBlog)
 export default router;
-
-
-// type,
-//     title,
-//     slug: buildSlug(slug),
-//     body,
-//     status,
-//     publishAt,
-//     seoInfo,
-//     mediaFiles,
-//     preview,
-//     createdBy: ctx.state.user.id,
