@@ -12,4 +12,8 @@ router.get('/blogs', BlogController.getListBlogs)
 
 // create blog
 router.post('/blogs', jwtValidate, BlogController.postCreateNewBlog)
+
+//update
+router.put('/blogs/:id', jwtValidate, BlogController.putUpdateBlog)
+
 export default router;

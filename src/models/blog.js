@@ -40,7 +40,7 @@ module.exports = (sequelize, DataTypes) => {
         sequelize,
         tableName: 'blogs',
         modelName: 'Blog',
-        timestamps: false,
+        timestamps: true,
         defaultScope: {
             where: {
                 status: Blog.STATUS.ACTIVE

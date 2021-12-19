@@ -20,6 +20,7 @@ import {
 } from '../utils/utils'
 import {buildSlug} from '../utils/utils'
 import dayjs from 'dayjs'
+import {isEqual} from 'lodash'
 
 const res = new Response();
 
@@ -118,9 +119,7 @@ export default class BLogController {
 
     static getBlogInfo = async (ctx, next) => {
         try {
-            let {
-                id
-            } = ctx.request.params;
+            let { id } = ctx.request.params;
             let condition = {};
             if (!isNaN(id)) {
                 // If id is number, search by id
@@ -169,6 +168,7 @@ export default class BLogController {
                 preview,
                 tagIds
             } = ctx.request.body;
+
             let checkDuplicateSlug = await Blog.findOne({
                 where: {
                     slug: buildSlug(slug)
@@ -208,19 +208,134 @@ export default class BLogController {
                 createdBy: ctx.state.user.id,
             });
             if (blog) {
-                let listBlogToTags =await Promise.all(tagIds.map(async (tagId) => {
+                let listBlogToTags = await Promise.all(tagIds.map(async (tagId) => {
                     return BlogToTag.create({
                         blogId: blog.id,
                         tagId: tagId
                     })
                 }))
-                console.log(listBlogToTags)
                 blog.dataValues.listblogToTags = listBlogToTags
             }
             res.setSuccess(blog, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);
         } catch (e) {
             Logger.error('postCreateNewBlog ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+    static putUpdateBlog = async (ctx, next) => {
+        try {
+            const { id } = ctx.request.params
+            const {type,
+                title,
+                slug,
+                body,
+                status,
+                publishAt,
+                mediaFiles,
+                preview,
+                tagIds } = ctx.request.body || {};
+            //const t = await db.sequelize.transaction();
+            let blogOld = await Blog.findOne({
+                where: {
+                    id: id
+                },
+                include: [
+                    {
+                        model: BlogToTag,
+                        as: 'listblogToTags'
+                    }
+                ]
+            })
+            let updateInfo = {};
+            if(!blogOld) {
+                res.setError(`Blog ${id} not found`, Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            if(slug && buildSlug(slug) !== blogOld.slug) {
+                let checkDuplicateSlug = await Blog.findOne({
+                    where: {
+                        slug: buildSlug(slug)
+                    }
+                })
+                if (checkDuplicateSlug) {
+                    res.setError(`Duplicated slug`, Constant.instance.HTTP_CODE.Conflict, {
+                        field: 'slug',
+                    }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+                    return res.send(ctx);
+                }
+                updateInfo.slug = buildSlug(slug)
+            }
+            let notFoundTag = []
+            for (const tagId of tagIds) {
+                let tag = await Tag.findOne({
+                    where: {
+                        id: tagId
+                    }
+                })
+                if(!tag) {
+                    notFoundTag.push(tagId)
+                }
+            }
+            if (notFoundTag.length >0 ) {
+                res.setError(`Tag ${notFoundTag.join(', ')} not found`, Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            if (type && type !== blogOld.type) {
+                updateInfo.type = type
+            }
+            if (title && title !== blogOld.title) {
+                updateInfo.title = title
+            }
+            if (body && !isEqual(body, blogOld.body)) {
+                updateInfo.body = body
+            }
+            if (status && status !== blogOld.status) {
+                updateInfo.status = status
+            }
+            if (publishAt && !isEqual(publishAt, blogOld.publishAt)) {
+                updateInfo.publishAt = publishAt
+            }
+            if (preview && preview !== blogOld.preview) {
+                updateInfo.preview = preview
+            }
+            if (mediaFiles && !isEqual(mediaFiles, blogOld.mediaFiles)) {
+                updateInfo.mediaFiles = mediaFiles
+            }
+           await Blog.update(updateInfo, {
+                where: {
+                    id: id,
+                },
+            });
+            if(tagIds && tagIds.length && !isEqual(tagIds.sort(), blogOld.listblogToTags.map(item=> item.tagId).sort())) {
+                await BlogToTag.destroy({
+                    where: {
+                        blogId: id,
+                    }
+                })
+                await Promise.all(tagIds.map(async (tagId) => {
+                    return BlogToTag.create({
+                        blogId: id,
+                        tagId: tagId
+                    })
+                }))
+            }
+            let blogNew = await Blog.findOne({
+                where: {
+                    id: id
+                },
+                include: [
+                    {
+                        model: BlogToTag,
+                        as: 'listblogToTags'
+                    }
+                ]
+            })
+            res.setSuccess(blogNew, Constant.instance.HTTP_CODE.Created);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putUpdateBlog ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
