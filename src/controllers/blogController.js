@@ -182,6 +182,17 @@ export default class BLogController {
                 }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
                 return res.send(ctx);
             }
+            if(type) {
+                let blogType = await BlogType.findOne({
+                    where: {
+                        id: type
+                    }
+                })
+                if (!blogType) {
+                    res.setError(`Blog Type ${type} not found`, Constant.instance.HTTP_CODE.NotFound);
+                    return res.send(ctx);
+                }
+            }
             let notFoundTag = []
             for (const tagId of tagIds) {
                 let tag = await Tag.findOne({
@@ -289,6 +300,15 @@ export default class BLogController {
                 }
             }
             if (type && type !== blogOld.type) {
+                let blogType = await BlogType.findOne({
+                    where: {
+                        id: type
+                    }
+                })
+                if (!blogType) {
+                    res.setError(`Blog Type ${type} not found`, Constant.instance.HTTP_CODE.NotFound);
+                    return res.send(ctx);
+                }
                 updateInfo.type = type
             }
             if (title && title !== blogOld.title) {
