@@ -6,7 +6,7 @@ import {
 
 const router = new Router();
 
-//get all list blog
+//get all list blog type
 router.get('/blogType' ,jwtValidate, BLogTypeController.getListBlogTypes)
 
 export default router;

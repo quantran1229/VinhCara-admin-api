@@ -6,7 +6,7 @@ import {
 
 const router = new Router();
 
-//get all list blog
+//get all list tag
 router.get('/tags' ,jwtValidate, TagController.getListTags)
 
 export default router;
