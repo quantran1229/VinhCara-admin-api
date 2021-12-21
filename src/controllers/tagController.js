@@ -136,7 +136,7 @@ export default class TagController {
                 transaction: t,
             })
             await t.commit();
-            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Created);
+            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             await t.rollback();

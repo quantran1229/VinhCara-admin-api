@@ -122,7 +122,7 @@ export default class BLogTypeController {
                     id: id
                 }
             })
-            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Created);
+            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('deleteBlogType ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
