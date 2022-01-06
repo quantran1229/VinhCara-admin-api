@@ -59,12 +59,7 @@ module.exports = (sequelize, DataTypes) => {
         sequelize,
         tableName: 'storeContacts',
         modelName: 'StoreContact',
-        timestamps: true,
-        defaultScope: {
-            where: {
-                status: StoreContact.STATUS.ACTIVE
-            }
-        }
+        timestamps: true
     });
     return StoreContact
 }

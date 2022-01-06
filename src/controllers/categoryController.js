@@ -16,12 +16,11 @@ const res = new Response();
 
 
 // recusive
-let recusive = (x,list)=>{
-    x.subs = list.filter(e=>e.parentId == x.id).sort((a,b)=>a.id-b.id);
-    list = list.filter(e=>e.parentId != x.id);
-    for (let sub of x.subs)
-    {
-        let result = recusive(sub,list);
+let recusive = (x, list) => {
+    x.subs = list.filter(e => e.parentId == x.id).sort((a, b) => a.id - b.id);
+    list = list.filter(e => e.parentId != x.id);
+    for (let sub of x.subs) {
+        let result = recusive(sub, list);
         sub = result.value;
         list = result.list;
     }
@@ -39,11 +38,10 @@ export default class CategoryController {
             let categoryList = await Category.findAll({
                 raw: true
             });
-            let list = categoryList.filter(e=>!e.parentId);
-            categoryList = categoryList.filter(e=>e.parentId);
-            for (let mainCategory of list)
-            {
-                let result = recusive(mainCategory,categoryList);
+            let list = categoryList.filter(e => !e.parentId);
+            categoryList = categoryList.filter(e => e.parentId);
+            for (let mainCategory of list) {
+                let result = recusive(mainCategory, categoryList);
                 mainCategory = result.value;
                 categoryList = result.list;
             }
@@ -51,8 +49,8 @@ export default class CategoryController {
             res.setSuccess(list, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getCategoryListTree ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
-            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError,null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            Logger.error('getCategoryListTree ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
     }
@@ -64,8 +62,87 @@ export default class CategoryController {
             res.setSuccess(categoryList, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getCategoryList ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
-            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError,null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            Logger.error('getCategoryList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static putCategoryUpdate = async (ctx, next) => {
+        try {
+            let id = ctx.request.params.id;
+            let category = await Category.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (!category) {
+                res.setError(`Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                return res.send(ctx);
+            }
+            const {
+                name,
+                parentId,
+                desc,
+                link,
+                mediafiles,
+                meta,
+                status,
+                type
+            } = ctx.request.body;
+            let updateInfo = {};
+            if (name && name != category.name) {
+                updateInfo.name = name;
+            }
+            if (parentId && parentId != category.parentId) {
+                updateInfo.parentId = parentId;
+            }
+            if (desc && desc != category.desc) {
+                updateInfo.desc = desc;
+            }
+            if (link && link != category.link) {
+                updateInfo.link = link;
+            }
+            if (mediafiles && mediafiles != category.mediafiles) {
+                updateInfo.mediafiles = mediafiles;
+            }
+            if (meta && meta != category.meta) {
+                updateInfo.meta = meta;
+            }
+            if (status && status != category.status) {
+                updateInfo.status = status;
+            }
+            if (type && type != category.type) {
+                updateInfo.type = type;
+            }
+            category = await category.update(updateInfo);
+            // Return info
+            res.setSuccess(category, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putCategoryUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static getCategoryInfo = async (ctx, next) => {
+        try {
+            let id = ctx.request.params.id;
+            let category = await Category.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (!category) {
+                res.setError(`Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                return res.send(ctx);
+            }
+            res.setSuccess(category, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('getCategoryInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
     }
