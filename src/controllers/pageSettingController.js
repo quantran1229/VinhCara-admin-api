@@ -20,7 +20,7 @@ export default class PageSettingController {
         try {
             const page = ctx.request.query.page;
             const setting = await PageSetting.findOne({
-                where:{
+                where: {
                     link: page
                 }
             });
@@ -32,7 +32,7 @@ export default class PageSettingController {
             res.setSuccess(setting, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getPageSettingInfo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('getPageSettingInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
@@ -45,7 +45,58 @@ export default class PageSettingController {
             res.setSuccess(pages, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getPageSettingList ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('getPageSettingList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static putPageSettingInfo = async (ctx, next) => {
+        try {
+            const page = ctx.request.query.page;
+            let pageSetting = await PageSetting.findOne({
+                where: {
+                    link: page
+                }
+            });
+            if (!pageSetting) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            const {
+                name,
+                link,
+                SEOInfo,
+                setting,
+                parentId,
+                banner
+            } = ctx.request.body;
+            let updateInfo = {};
+            if (name && name != pageSetting.name) {
+                updateInfo.name = name
+            }
+            if (link && link != pageSetting.link) {
+                updateInfo.link = link
+            }
+            if (SEOInfo && SEOInfo != pageSetting.SEOInfo) {
+                updateInfo.SEOInfo = SEOInfo
+            }
+            if (parentId && parentId != pageSetting.parentId) {
+                updateInfo.parentId = parentId
+            }
+            if (banner && banner != pageSetting.banner) {
+                updateInfo.banner = banner
+            }
+            pageSetting = await PageSetting.update(updateInfo, {
+                where: {
+                    id: pageSetting.id
+                }
+            });
+            // Return info
+            res.setSuccess(setting, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putPageSettingInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
