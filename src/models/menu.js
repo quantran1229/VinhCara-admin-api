@@ -14,13 +14,13 @@ module.exports = (sequelize, DataTypes) => {
     }
     static associate(models) {
       // define association here
-      Menu.hasMany(Menu,{
+      Menu.hasMany(Menu, {
         foreignKey: 'parentId',
         sourceKey: 'id',
         as: 'subs'
       });
 
-      Menu.belongsTo(Menu,{
+      Menu.belongsTo(Menu, {
         foreignKey: 'parentId',
         targetKey: 'id',
         as: 'parent'
@@ -32,8 +32,11 @@ module.exports = (sequelize, DataTypes) => {
     meta: DataTypes.JSONB,
     name: DataTypes.STRING,
     status: DataTypes.INTEGER,
-    bannerInfo: DataTypes.JSONB,
-    parentId: DataTypes.NUMBER
+    mediafile: DataTypes.JSONB,
+    parentId: DataTypes.NUMBER,
+    type: DataTypes.INTEGER,
+    buttonText: DataTypes.STRING,
+    order: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Menu',
