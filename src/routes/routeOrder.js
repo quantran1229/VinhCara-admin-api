@@ -83,10 +83,6 @@ router.put('/orders/:id', jwtValidate, validate({
             type: 'enum?',
             values: Object.values(Order.STATUS)
         },
-        paymentStatus: {
-            type: 'enum?',
-            values: Object.values(Order.PAYMENT_STATUS)
-        },
         paymentInfo: {
             type: 'object?'
         }

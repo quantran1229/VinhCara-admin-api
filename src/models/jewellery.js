@@ -164,17 +164,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Jewellery',
     tableName: 'jewellery',
-    defaultScope: {
-      where: {
-        isLuxury: false,
-        isShowOnWeb: true
-      },
-      attributes: {
-        include: [
-          ['productCode', 'id']
-        ]
-      }
-    },
     scopes:{
       luxury:{
         where:{

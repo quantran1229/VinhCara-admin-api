@@ -18,7 +18,9 @@ import db, {
     Customer,
     OrderItem,
     ReturnForm,
-    Location
+    Location,
+    JewellerySerial,
+    DiamondSerial
 } from '../models';
 
 const res = new Response();
@@ -116,9 +118,6 @@ export default class OrderController {
             if (query.paymentMethod) {
                 condition.paymentMethod = query.paymentMethod;
             }
-            if (query.paymentStatus) {
-                condition.paymentStatus = query.paymentStatus;
-            }
             if (query.code) {
                 condition.code = {
                     [Op.iLike]: `%${query.code}%`
@@ -145,7 +144,7 @@ export default class OrderController {
             let pager = paging(query);
             const result = await Order.findAndCountAll(Object.assign({
                 where: condition,
-                attributes: ['id', 'code', 'recieverName', 'phone', 'address', 'status', 'paymentStatus', 'createdAt', 'isGift', 'giftAddress', 'totalPrice'],
+                attributes: ['id', 'code', 'recieverName', 'phone', 'address', 'status', 'createdAt', 'isGift', 'giftAddress', 'totalPrice'],
                 include: [{
                     model: Location,
                     as: 'districtInfo',
@@ -208,7 +207,6 @@ export default class OrderController {
             const {
                 note,
                 status,
-                paymentStatus,
                 recieverName,
                 address,
                 email,
@@ -308,18 +306,48 @@ export default class OrderController {
             if (providenceId && providenceId != order.providenceId) {
                 updateInfo.providenceId = providenceId
             }
-            if ((status && status != order.status) || (paymentStatus && paymentStatus != order.paymentStatus)) {
+            let removeSerial = false;
+            let deleteSerial = false;
+            let revertSerial = false;
+            if (status && status != order.status) {
+                if (status > 0 && status < order.status) {
+                    res.setError(`Status must be > current status or cancel`, Constant.instance.HTTP_CODE.Forbidden, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+                    return res.send(ctx);
+                }
+                // Check flow
+                if (order.paymentMethod == Order.PAYMENT_METHOD.ONLINE) {
+                    if (status > 0 && status < Order.STATUS.PROCESSING) {
+                        res.setError(`Status must be > 3`, Constant.instance.HTTP_CODE.Forbidden, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+                        return res.send(ctx);
+                    }
+                } else if (order.paymentMethod == Order.PAYMENT_METHOD.COD) {
+                    if (status > 0 && status < Order.STATUS.PROCESSING) {
+                        res.setError(`Status must be > 3`, Constant.instance.HTTP_CODE.Forbidden, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+                        return res.send(ctx);
+                    }
+                    if (status == Order.STATUS.SHIPPING) {
+                        removeSerial = true;
+                    }
+                } else {
+                    if (status == Order.STATUS.WAITING_FOR_PAYMENT) {
+                        removeSerial = true;
+                    }
+                }
+
                 updateInfo.status = status || order.status;
-                updateInfo.paymentStatus = paymentStatus || order.paymentStatus;
                 let logs = JSON.parse(JSON.stringify(order.logs));
                 logs.push({
                     by: user.id,
                     id: logs.length,
                     status: updateInfo.status,
-                    paymentStatus: updateInfo.paymentStatus,
                     createdAt: dayjs().unix()
                 })
                 updateInfo.logs = logs;
+                if (status == Order.STATUS.CANCEL) {
+                    revertSerial = true;
+                } else if (status == Order.STATUS.DONE) {
+                    deleteSerial = true;
+                }
             }
             if (paymentInfo) {
                 let ob = {
@@ -329,6 +357,9 @@ export default class OrderController {
                 updateInfo.paymentInfo = ob;
             }
             order = await order.update(updateInfo);
+            if (removeSerial) await this.removeStockFromOrder(order.id);
+            if (deleteSerial) await this.deleteStockFromOrder(order.id);
+            if (revertSerial) await this.revertStockFromOrder(order.id);
             // Return info
             res.setSuccess(order, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
@@ -336,6 +367,134 @@ export default class OrderController {
             Logger.error('putOrderInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
+        }
+    }
+
+    static deleteStockFromOrder = async (orderId) => {
+        let transaction;
+        try {
+            transaction = await db.sequelize.transaction();
+            let orderItems = await OrderItem.findAll({
+                where: {
+                    orderId: orderId
+                },
+                attributes: ['serial', 'type']
+            });
+            let jewList = [];
+            let diaList = [];
+            jewList = orderItems.filter(e => e.type == OrderItem.TYPE.JEWELLERY).map(e => e.serial);
+            diaList = orderItems.filter(e => e.type == OrderItem.TYPE.DIAMOND).map(e => e.serial);
+            await Promise.all([JewellerySerial.destroy({
+                where: {
+                    serial: {
+                        [Op.in]: jewList
+                    },
+                    status: -1
+                },
+                transaction: transaction
+            }), DiamondSerial.destroy({
+                where: {
+                    serial: {
+                        [Op.in]: diaList
+                    },
+                    status: -1
+                },
+                transaction: transaction
+            })]);
+            await transaction.commit();
+            return;
+        } catch (e) {
+            Logger.error('removeStockFromOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            if (transaction) await transaction.rollback();
+            return;
+        }
+    }
+
+    static removeStockFromOrder = async (orderId) => {
+        let transaction;
+        try {
+            transaction = await db.sequelize.transaction();
+            let orderItems = await OrderItem.findAll({
+                where: {
+                    orderId: orderId
+                },
+                attributes: ['serial', 'type']
+            });
+            let jewList = [];
+            let diaList = [];
+            jewList = orderItems.filter(e => e.type == OrderItem.TYPE.JEWELLERY).map(e => e.serial);
+            diaList = orderItems.filter(e => e.type == OrderItem.TYPE.DIAMOND).map(e => e.serial);
+            await Promise.all([JewellerySerial.update({
+                status: -1
+            }, {
+                where: {
+                    serial: {
+                        [Op.in]: jewList
+                    },
+                    status: 1
+                },
+                transaction: transaction
+            }), DiamondSerial.update({
+                status: -1
+            }, {
+                where: {
+                    serial: {
+                        [Op.in]: diaList
+                    },
+                    status: 1
+                },
+                transaction: transaction
+            })]);
+            await transaction.commit();
+            return;
+        } catch (e) {
+            Logger.error('removeStockFromOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            if (transaction) await transaction.rollback();
+            return;
+        }
+    }
+
+    static revertStockFromOrder = async (orderId) => {
+        let transaction;
+        try {
+            transaction = await db.sequelize.transaction();
+            let orderItems = await OrderItem.findAll({
+                where: {
+                    orderId: orderId
+                },
+                attributes: ['serial', 'type']
+            });
+            let jewList = [];
+            let diaList = [];
+            jewList = orderItems.filter(e => e.type == OrderItem.TYPE.JEWELLERY).map(e => e.serial);
+            diaList = orderItems.filter(e => e.type == OrderItem.TYPE.DIAMOND).map(e => e.serial);
+            await Promise.all([JewellerySerial.update({
+                status: 1
+            }, {
+                where: {
+                    serial: {
+                        [Op.in]: jewList
+                    },
+                    status: -1
+                },
+                transaction: transaction
+            }), DiamondSerial.update({
+                status: 1
+            }, {
+                where: {
+                    serial: {
+                        [Op.in]: diaList
+                    },
+                    status: -1
+                },
+                transaction: transaction
+            })]);
+            await transaction.commit();
+            return;
+        } catch (e) {
+            Logger.error('removeStockFromOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            if (transaction) await transaction.rollback();
+            return;
         }
     }
 }
