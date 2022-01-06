@@ -21,16 +21,12 @@ module.exports = (sequelize, DataTypes) => {
     }
     static STATUS = {
       NEW: 1,
-      PROCESSING: 2,
-      SHIPPING: 3,
-      DONE: 4,
-      CANCEL: -2,
-      RETURNED: -4
-    }
-    static PAYMENT_STATUS = {
-      WAITING: 1,
-      PAID: 2,
-      RETURNED: -2
+      WAITING_FOR_PAYMENT : 2,
+      PAYMENT_DONE: 3,
+      PROCESSING: 4,
+      SHIPPING: 5,
+      DONE: 6,
+      CANCEL: -1,
     }
     static associate(models) {
       // define association here
@@ -129,7 +125,6 @@ module.exports = (sequelize, DataTypes) => {
     shippingType: DataTypes.INTEGER,
     paymentMethod: DataTypes.INTEGER,
     status: DataTypes.INTEGER,
-    paymentStatus: DataTypes.INTEGER,
     paymentInfo: DataTypes.JSONB,
     meta: DataTypes.JSONB,
     note: DataTypes.TEXT

@@ -45,7 +45,7 @@ export default class CustomerController {
                     required: false,
                     model: Order,
                     as: 'orders',
-                    attributes: ['id', 'code', 'createdAt', 'status', 'paymentStatus', 'paymentMethod', 'totalPrice'],
+                    attributes: ['id', 'code', 'createdAt', 'status', 'paymentMethod', 'totalPrice'],
                     include: [{
                         required: false,
                         model: OrderItem,
