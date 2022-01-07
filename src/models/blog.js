@@ -6,9 +6,9 @@ const {
 module.exports = (sequelize, DataTypes) => {
     class Blog extends Model {
         static STATUS = {
-            ACTIVE: 1, //publish
-            INACTIVE: -1, //Nháp
-            STOP: -2 // Dừng
+            ACTIVE: 2, //publish
+            INACTIVE: 1, //Nháp
+            STOP: -1 // Dừng
         }
         static associate(models) {
             // define association here
