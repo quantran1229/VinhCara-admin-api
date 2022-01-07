@@ -95,6 +95,15 @@ export default class CategoryController {
                 updateInfo.name = name;
             }
             if (parentId && parentId != category.parentId) {
+                let parent = await Category.findOne({
+                    where: {
+                        id: parentId
+                    }
+                });
+                if (!parent) {
+                    res.setError(`parentId ${parentId} Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                    return res.send(ctx);
+                }
                 updateInfo.parentId = parentId;
             }
             if (desc && desc != category.desc) {
@@ -121,6 +130,74 @@ export default class CategoryController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('putCategoryUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+    static postCategoryCreate = async (ctx, next) => {
+        try {
+            const {
+                name,
+                parentId,
+                desc,
+                link,
+                mediafiles,
+                meta,
+                status,
+                type
+            } = ctx.request.body;
+            if (parentId) {
+                let parent = await Category.findOne({
+                    where: {
+                        id: parentId
+                    }
+                });
+                if (!parent) {
+                    res.setError(`parentId ${parentId} Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                    return res.send(ctx);
+                }
+            }
+            let category = await Category.create({
+                name,
+                parentId,
+                desc,
+                link,
+                mediafiles,
+                meta,
+                status,
+                type
+            });
+            res.setSuccess(category, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postCategoryCreate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+
+    }
+
+    static deleteCategory = async (ctx, next) => {
+        try {
+            let id = ctx.request.params.id;
+            let category = await Category.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (!category) {
+                res.setError(`Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                return res.send(ctx);
+            }
+            await Category.destroy({
+                where: {
+                    id: id
+                }
+            })
+            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('deleteCategory ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }

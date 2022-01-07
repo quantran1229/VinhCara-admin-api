@@ -11,7 +11,8 @@ module.exports = (sequelize, DataTypes) => {
             STOP: -1 // Dừng
         }
         static associate(models) {
-            // define association here
+            // define associatio
+            // n here
             Blog.belongsTo(models.BlogType, {
                 foreignKey: 'type',
                 targetKey: 'id',
