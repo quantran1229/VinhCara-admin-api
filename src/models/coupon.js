@@ -1,56 +1,98 @@
 'use strict';
 const {
-    Model
+    Model,
+    Op,
+    literal,
+    Sequelize
 } = require('sequelize');
+import dayjs from 'dayjs';
 module.exports = (sequelize, DataTypes) => {
     class Coupon extends Model {
-        static TYPE = {
-            on_order: 1,
-            on_product: 2,
-            gift: 3,
-            combo: 4,
-            product_type: 5
+        static COUPON_TYPE = {
+            DISCOUNT: 1,
+            DISCOUNT_GIFT: 2,
+            GIFT: 3
         }
-        static SUB_TYPE = {
-            use_many_time: 1,
-            use_once: 2,
-            use_many_time_but_have_limit: 3
+        static TYPE = {
+            PUBLIC: 1,
+            PRIVATE: 2
         }
         static STATUS = {
-            active: 1,
-            inactive: -1,
-            finished: 2,
-            stop: -2
+            ACTIVE: 1,
+            INACTIVE: -1,
+            FINISHED: 2,
+            STOP: -2
         }
+
+        static USER_TYPE = {
+            ALL: 1,
+            CUSTOMER: 2
+        }
+
+        static async getList(condition, pager) {
+            let result = await this.findAndCountAll(Object.assign({
+                where: condition,
+                order: [
+                    ['endTime', 'DESC NULLS LAST'],
+                    ['startTime', 'ASC']
+                ],
+                attributes: ['id', 'code', 'gifts', 'discountPrice', 'discountPercent', 'couponType', 'minimumRequirement', 'desc', 'showValue', 'createdAt', 'startTime', 'endTime']
+            }, pager));
+            return {
+                count: result.count,
+                list: result.rows
+            };
+        }
+
         static getInfo(id) {
+            let condition = {};
+            if (!isNaN(id)) {
+                condition.id = id;
+            } else {
+                condition.code = id.toUpperCase();
+            }
             return this.findOne({
-                where: {
-                    id: id
-                },
+                where: condition
             })
+        }
+
+        static associate(models) {
+            // define association here
+            Coupon.hasMany(models.Order, {
+                foreignKey: 'couponId',
+                sourceKey: 'id',
+                as: 'orderList',
+                scope: {
+                    status: {
+                        [Op.not]: models.Order.STATUS.CANCEL
+                    }
+                },
+            });
         }
     };
     Coupon.init({
         code: DataTypes.STRING,
         type: DataTypes.INTEGER,
-        desc: DataTypes.STRING,
-        subType: DataTypes.INTEGER,
+        customerId: DataTypes.INTEGER,
+        gifts: DataTypes.JSONB,
         limit: DataTypes.INTEGER,
         status: DataTypes.INTEGER,
-        discountPercent: DataTypes.INTEGER,
-        discountPrice: DataTypes.BIGINT,
-        minimumRequirement: DataTypes.BIGINT,
-        maximumDiscount: DataTypes.BIGINT,
-        startTime: DataTypes.DATE,
-        endTime: DataTypes.DATE,
+        minimumRequirement: DataTypes.JSONB,
+        startTime: DataTypes.INTEGER,
+        endTime: DataTypes.INTEGER,
         createdBy: DataTypes.INTEGER,
-        membershipType: DataTypes.ARRAY(DataTypes.INTEGER),
+        userType: DataTypes.INTEGER,
+        discountPrice: DataTypes.JSONB,
+        discountPercent: DataTypes.JSONB,
+        couponType: DataTypes.INTEGER,
         meta: DataTypes.JSONB,
+        desc: DataTypes.TEXT,
+        showValue: DataTypes.STRING
     }, {
         sequelize,
         tableName: 'coupons',
         modelName: 'Coupon',
-        timestamps: true,
+        timestamps: true
     });
     return Coupon
 }
