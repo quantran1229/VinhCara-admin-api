@@ -97,6 +97,15 @@ export default class MenuController {
                 updateInfo.name = name;
             }
             if (parentId && parentId != Menu.parentId) {
+                let menuParentId = await Menu.findOne({
+                    where: {
+                        id: parentId
+                    }
+                });
+                if(!menuParentId) {
+                    res.setError(`parentId ${parentId} Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                    return res.send(ctx);
+                }
                 updateInfo.parentId = parentId;
             }
             if (buttonText && buttonText != Menu.buttonText) {
@@ -106,6 +115,17 @@ export default class MenuController {
                 updateInfo.order = order;
             }
             if (link && link != Menu.link) {
+                let menuLink = await Menu.findOne({
+                    where: {
+                        link: link
+                    }
+                });
+                if (menuLink) {
+                    res.setError(`Duplicated link`, Constant.instance.HTTP_CODE.Conflict, {
+                        field: 'link',
+                    }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+                    return res.send(ctx);
+                }
                 updateInfo.link = link;
             }
             if (mediafile && mediafile != Menu.mediafile) {
@@ -126,6 +146,86 @@ export default class MenuController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('putCategoryUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static postMenuCreate = async (ctx, next) => {
+        try {
+            const {
+                link,
+                meta,
+                name,
+                status,
+                mediafile,
+                parentId,
+                type,
+                buttonText,
+                order
+            } = ctx.request.body;
+            let menuLink = await Menu.findOne({
+                where: {
+                    link: link
+                }
+            });
+            if (menuLink) {
+                res.setError(`Duplicated link`, Constant.instance.HTTP_CODE.Conflict, {
+                    field: 'link',
+                }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+                return res.send(ctx);
+            }
+            let menuParentId = await Menu.findOne({
+                where: {
+                    id: parentId
+                }
+            });
+            if(!menuParentId) {
+                res.setError(`parentId ${parentId} Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                return res.send(ctx);
+            }
+            let menu = await Menu.create({
+                link,
+                meta,
+                name,
+                status,
+                mediafile,
+                parentId,
+                type,
+                buttonText,
+                order
+            });
+            // Return info
+            res.setSuccess(menu, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postMenuCreate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static deleteMenu = async (ctx, next) => {
+        try {
+            let id = ctx.request.params.id;
+            let menu = await Menu.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (!menu) {
+                res.setError(`Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                return res.send(ctx);
+            }
+            await Menu.destroy({
+                where: {
+                    id: id
+                }
+            })
+            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('deleteMenu ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
