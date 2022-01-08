@@ -88,6 +88,11 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'id',
         as: 'membershipCouponInfo',
       })
+      Order.belongsTo(models.Coupon, {
+        foreignKey: 'couponId',
+        targetKey: 'id',
+        as: 'couponInfo',
+      })
       Order.hasMany(models.OrderItem, {
         foreignKey: 'orderId',
         sourceKey: 'id',
@@ -127,7 +132,9 @@ module.exports = (sequelize, DataTypes) => {
     status: DataTypes.INTEGER,
     paymentInfo: DataTypes.JSONB,
     meta: DataTypes.JSONB,
-    note: DataTypes.TEXT
+    note: DataTypes.TEXT,
+    email: DataTypes.STRING,
+    membershipPhone: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Order',

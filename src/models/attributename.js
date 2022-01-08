@@ -21,11 +21,16 @@ module.exports = (sequelize, DataTypes) => {
     showName: DataTypes.STRING,
     name: DataTypes.STRING,
     type: DataTypes.INTEGER,
-    desc: DataTypes.TEXT
+    desc: DataTypes.TEXT,
+    attributeCode: {
+      type: DataTypes.INTEGER,
+      primaryKey: true
+    }
   }, {
     sequelize,
     modelName: 'AttributeName',
-    tableName: 'attributeNames'
+    tableName: 'attributeNames',
+    timestamps: false
   });
   return attributeName;
 };
