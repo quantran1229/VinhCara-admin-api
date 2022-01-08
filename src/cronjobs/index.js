@@ -14,6 +14,7 @@ import {
 
 //Check 30 mins after VNPay
 var checkVNPay = new CronJob('0 * * * * * *', async function () {
+    Logger.info("Start check for VNPay due 30 mins");
     let orders = await Order.findAll({
         where: {
             paymentMethod: Order.PAYMENT_METHOD.ONLINE,
@@ -62,3 +63,40 @@ var checkVNPay = new CronJob('0 * * * * * *', async function () {
 });
 
 checkVNPay.start();
+
+// Activate Coupon
+var activateCoupon = new CronJob('0 * * * * * *', async function () {
+    Logger.info("Start check for Coupon to start");
+    let coupons = await Coupon.findAll({
+        where: {
+            status: Coupon.STATUS.INACTIVE,
+            endTime: {
+                [Op.not]: null,
+                [Op.lte]: dayjs().toDate()
+            }
+        }
+    });
+    if (coupons.length > 0) {
+        let transaction;
+        try {
+            transaction = await db.sequelize.transaction();
+            await Coupon.update({
+                status: Coupon.STATUS.ACTIVE
+            }, {
+                where: {
+                    id: {
+                        [Op.in]: coupons.map(e => e.id)
+                    }
+                },
+                transaction
+            })
+            await transaction.commit();
+            Logger.info("Total activate coupons: " + coupons.length)
+        } catch (err) {
+            await transaction.rollback();
+            Logger.error('cron: checkVNPay ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+        }
+    }
+});
+
+activateCoupon.start();
