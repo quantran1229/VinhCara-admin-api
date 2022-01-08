@@ -72,7 +72,7 @@ var activateCoupon = new CronJob('0 * * * * *', async function () {
             status: Coupon.STATUS.INACTIVE,
             endTime: {
                 [Op.not]: null,
-                [Op.lte]: dayjs().add(0, 'm').toDate()
+                [Op.lte]: dayjs().add(-1, 's').toDate()
             }
         }
     });
