@@ -87,6 +87,6 @@ router.put('/orders/:id', jwtValidate, validate({
             type: 'object?'
         }
     }
-}), OrderController.putOrderInfo)
+}), OrderController.putOrderInfo);
 
 export default router;
