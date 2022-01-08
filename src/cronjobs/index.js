@@ -13,7 +13,7 @@ import {
 // ALL CRON JOB HERE
 
 //Check 30 mins after VNPay
-var checkVNPay = new CronJob('0 * * * * * *', async function () {
+var checkVNPay = new CronJob('0 * * * * *', async function () {
     Logger.info("Start check for VNPay due 30 mins");
     let orders = await Order.findAll({
         where: {
@@ -65,7 +65,7 @@ var checkVNPay = new CronJob('0 * * * * * *', async function () {
 checkVNPay.start();
 
 // Activate Coupon
-var activateCoupon = new CronJob('0 * * * * * *', async function () {
+var activateCoupon = new CronJob('0 * * * * *', async function () {
     Logger.info("Start check for Coupon to start");
     let coupons = await Coupon.findAll({
         where: {
@@ -94,7 +94,7 @@ var activateCoupon = new CronJob('0 * * * * * *', async function () {
             Logger.info("Total activate coupons: " + coupons.length)
         } catch (err) {
             await transaction.rollback();
-            Logger.error('cron: checkVNPay ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('cron: activateCoupon ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
         }
     }
 });
