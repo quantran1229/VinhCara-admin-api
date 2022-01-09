@@ -82,4 +82,66 @@ export default class GeneralInfoController {
             return res.send(ctx);
         }
     }
+
+    static postGeneralInfoCreate = async (ctx, next) => {
+        try {
+            let {
+                id,
+                name,
+                setting
+            } = ctx.request.body;
+            let generalInfo = await GeneralInfo.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (generalInfo) {
+                res.setError(`Duplicated id`, Constant.instance.HTTP_CODE.Conflict, {
+                    field: 'id',
+                }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+                return res.send(ctx);
+            }
+           let respGeneralInfo = await GeneralInfo.create({
+                id,
+                name,
+                setting
+            });
+            // Return info
+            res.setSuccess(respGeneralInfo, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postGeneralInfoCreate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static deleteGeneralInfo = async (ctx, next) => {
+        try {
+            const {
+                type
+            } = ctx.request.params;
+            let respGeneralInfo = await GeneralInfo.findOne({
+                where: {
+                    id: type
+                }
+            });
+            if (!respGeneralInfo) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            await GeneralInfo.destroy({
+                where: {
+                    id: type
+                }
+            })
+            // Return info
+            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('deleteGeneralInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
 }
