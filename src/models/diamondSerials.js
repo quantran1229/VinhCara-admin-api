@@ -125,7 +125,7 @@ module.exports = (sequelize, DataTypes) => {
     cut: DataTypes.STRING,
     price: DataTypes.BIGINT,
     extraProperties: DataTypes.JSONB,
-    measurement: DataTypes.STRING,
+    measurements: DataTypes.STRING,
     price: DataTypes.BIGINT,
     shape: DataTypes.STRING,
     size: DataTypes.DOUBLE,
