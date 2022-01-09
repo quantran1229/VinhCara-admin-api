@@ -54,4 +54,6 @@ router.put('/jewellery/:id', jwtValidate, validate({
 
 // // Get jewellery category
 router.get('/jewellery-category', jwtValidate, JewelleryController.getJewelleryCategoryList);
+
+router.get('/jewellery-serials', jwtValidate, JewelleryController.getJewellerySerialList);
 export default router;
