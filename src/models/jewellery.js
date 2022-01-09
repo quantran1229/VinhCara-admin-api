@@ -14,35 +14,11 @@ module.exports = (sequelize, DataTypes) => {
       CUSTOMIZE_SIZE: 2, // Tùy biến size
       DOUBLE: 3 // Sản phẩm đôi
     }
-    static getInfo(id, customerId) {
+    static getInfo(id) {
       let include = [{
         model: sequelize.models.JewellerySerial,
         as: 'serialList',
-      }, {
-        model: sequelize.models.JewelleryCategory,
-        as: 'sizeInfo',
-        attributes: ['name', 'size', 'defaultSize'],
-        include: [{
-          model: sequelize.models.JewelleryCategory,
-          as: 'subs',
-          attributes: ['name', 'size', 'defaultSize']
-        }]
       }];
-      if (customerId) {
-        include.push({
-          model: sequelize.models.WishlistLog,
-          required: false,
-          where: {
-            customerId: customerId,
-            isCurrent: true,
-            status: sequelize.models.WishlistLog.STATUS.LIKE,
-          },
-          as: 'wishlistInfo',
-          attributes: [
-            ['status', 'isLiked']
-          ]
-        });
-      }
       return this.findOne({
         where: {
           productCode: id
@@ -159,14 +135,15 @@ module.exports = (sequelize, DataTypes) => {
     totalOrders: DataTypes.INTEGER,
     type: DataTypes.INTEGER,
     shape: DataTypes.STRING,
-    isShowOnWeb: DataTypes.BOOLEAN
+    isShowOnWeb: DataTypes.BOOLEAN,
+    desc: DataTypes.TEXT
   }, {
     sequelize,
     modelName: 'Jewellery',
     tableName: 'jewellery',
-    scopes:{
-      luxury:{
-        where:{
+    scopes: {
+      luxury: {
+        where: {
           isLuxury: true
         }
       }
