@@ -15,6 +15,64 @@ router.get('/page-settings', jwtValidate, PageSettingController.getPageSettingLi
 // Get Page info
 router.get('/page-setting-info', jwtValidate, PageSettingController.getPageSettingInfo);
 
-router.put('/page-setting-info', jwtValidate, PageSettingController.putPageSettingInfo)
+router.put('/page-setting-info',validate({
+    body: {
+        parentId: {
+            type: 'number',
+            required: false
+        },
+        name: {
+            type: 'string',
+            required: false
+        },
+        link: {
+            type: 'string',
+            required: false
+        },
+        SEOInfo: {
+            type: 'object',
+            required: false
+        },
+        setting: {
+            type: 'object',
+            required: false
+        },
+        banner: {
+            type: 'object',
+            required: false
+        },
+    }
+}) , jwtValidate, PageSettingController.putPageSettingInfo)
+
+router.post('/page-setting-info',validate({
+    body: {
+        parentId: {
+            type: 'number',
+            required: false
+        },
+        name: {
+            type: 'string',
+            required: false
+        },
+        link: {
+            type: 'string',
+            required: true
+        },
+        SEOInfo: {
+            type: 'object',
+            required: false
+        },
+        setting: {
+            type: 'object',
+            required: false
+        },
+        banner: {
+            type: 'object',
+            required: false
+        },
+    }
+}) , jwtValidate, PageSettingController.postPageSettingInfo)
+
+router.delete('/page-setting-info', jwtValidate, PageSettingController.deletePageSettingInfo)
 
 export default router;

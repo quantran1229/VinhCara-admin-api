@@ -12,6 +12,36 @@ router.get('/general-info/:type', jwtValidate, GeneralInfoController.getGeneralI
 //get all list GeneralInfo
 router.get('/general-info', jwtValidate, GeneralInfoController.getGeneralInfoAllList);
 
-router.put('/general-info/:type', jwtValidate, GeneralInfoController.putGeneralInfoUpdate)
+router.put('/general-info/:type',validate({
+    body: {
+        name: {
+            type: 'string',
+            required: false
+        },
+        setting: {
+            type: 'object',
+            required: false
+        },
+    }
+}), jwtValidate, GeneralInfoController.putGeneralInfoUpdate)
+
+router.post('/general-info',validate({
+    body: {
+        id: {
+            type: 'number',
+            required: true
+        },
+        name: {
+            type: 'string',
+            required: false
+        },
+        setting: {
+            type: 'object',
+            required: false
+        },
+    }
+}), jwtValidate, GeneralInfoController.postGeneralInfoCreate)
+
+router.delete('/general-info/:type', jwtValidate, GeneralInfoController.deleteGeneralInfo)
 
 export default router;

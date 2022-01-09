@@ -4,7 +4,8 @@ import {
 import dayjs from 'dayjs';
 import db, {
     Order,
-    Coupon
+    Coupon,
+    Blog
 } from '../models';
 import Logger from '../utils/logger';
 import {
@@ -100,3 +101,38 @@ var activateCoupon = new CronJob('0 * * * * *', async function () {
 });
 
 activateCoupon.start();
+
+var activateBlog = new CronJob('0 * * * * *', async function () {
+    Logger.info("Start check for blog to start");
+    let blogs = await Blog.findAll({
+        where: {
+            status: Blog.STATUS.INACTIVE,
+            publishAt: {
+                [Op.not]: null,
+                [Op.lte]: dayjs().add(-1, 's').toISOString()
+            }
+        }
+    });
+    if (blogs.length > 0) {
+        let transaction;
+        try {
+            transaction = await db.sequelize.transaction();
+            await Blog.update({
+                status: Blog.STATUS.ACTIVE
+            }, {
+                where: {
+                    id: {
+                        [Op.in]: blogs.map(e => e.id)
+                    }
+                },
+                transaction
+            })
+            await transaction.commit();
+            Logger.info("Total activate coupons: " + blogs.length)
+        } catch (err) {
+            await transaction.rollback();
+            Logger.error('cron: activateBlog ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+        }
+    }
+});
+activateBlog.start();
