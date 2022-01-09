@@ -76,12 +76,32 @@ export default class PageSettingController {
                 updateInfo.name = name
             }
             if (link && link != pageSetting.link) {
+                let pageSettingLink = await PageSetting.findOne({
+                    where: {
+                        link: link
+                    }
+                });
+                if (pageSettingLink) {
+                    res.setError(`Duplicated link`, Constant.instance.HTTP_CODE.Conflict, {
+                        field: 'link',
+                    }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+                    return res.send(ctx);
+                }
                 updateInfo.link = link
             }
             if (SEOInfo && SEOInfo != pageSetting.SEOInfo) {
                 updateInfo.SEOInfo = SEOInfo
             }
             if (parentId && parentId != pageSetting.parentId) {
+                let pageSettingParentId = await PageSetting.findOne({
+                    where: {
+                        id: parentId
+                    }
+                });
+                if(!pageSettingParentId) {
+                    res.setError(`parentId ${parentId} Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                    return res.send(ctx);
+                }
                 updateInfo.parentId = parentId
             }
             if (banner && banner != pageSetting.banner) {
@@ -97,6 +117,84 @@ export default class PageSettingController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('putPageSettingInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static postPageSettingInfo = async (ctx, next) => {
+        try {
+            const {
+                name,
+                link,
+                SEOInfo,
+                setting,
+                parentId,
+                banner
+            } = ctx.request.body;
+            let pageSettingLink = await PageSetting.findOne({
+                where: {
+                    link: link
+                }
+            });
+            if (pageSettingLink) {
+                res.setError(`Duplicated link`, Constant.instance.HTTP_CODE.Conflict, {
+                    field: 'link',
+                }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+                return res.send(ctx);
+            }
+            if(parentId)
+            {
+                let pageSettingParentId = await PageSetting.findOne({
+                    where: {
+                        id: parentId
+                    }
+                });
+                if(!pageSettingParentId) {
+                    res.setError(`parentId ${parentId} Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                    return res.send(ctx);
+                }
+            }
+            let pageSetting = await PageSetting.create({
+                name,
+                link,
+                SEOInfo,
+                setting,
+                parentId,
+                banner
+            });
+            // Return info
+            res.setSuccess(setting, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postPageSettingInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static deletePageSettingInfo = async (ctx, next) => {
+        try {
+            const page = ctx.request.query.page;
+            let pageSetting = await PageSetting.findOne({
+                where: {
+                    link: page
+                }
+            });
+            if (!pageSetting) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            await PageSetting.destroy({
+                where: {
+                    id: pageSetting.id
+                }
+            });
+            // Return info
+            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('deletePageSettingInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }

@@ -175,14 +175,16 @@ export default class MenuController {
                 }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
                 return res.send(ctx);
             }
-            let menuParentId = await Menu.findOne({
-                where: {
-                    id: parentId
+            if(parentId) {
+                let menuParentId = await Menu.findOne({
+                    where: {
+                        id: parentId
+                    }
+                });
+                if(!menuParentId) {
+                    res.setError(`parentId ${parentId} Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                    return res.send(ctx);
                 }
-            });
-            if(!menuParentId) {
-                res.setError(`parentId ${parentId} Not found`, Constant.instance.HTTP_CODE.NotFound, null);
-                return res.send(ctx);
             }
             let menu = await Menu.create({
                 link,
