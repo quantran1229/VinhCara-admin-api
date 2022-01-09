@@ -2,18 +2,23 @@ import Router from 'koa-router';
 import {
     DiamondController
 } from '../controllers';
+import {
+    validate,
+    jwtValidate
+} from '../middlewares';
 const router = new Router();
 
 // Get Diamond list
-router.get('/diamonds', DiamondController.getDiamondList);
+router.get('/diamonds', jwtValidate, DiamondController.getDiamondList);
+
+router.get('/diamond-serials', jwtValidate, DiamondController.getDiamondSerialList);
 
 // Get Diamond info
-router.get('/diamonds/:id', DiamondController.getDiamondInfo);
+router.get('/diamonds/:id', jwtValidate, DiamondController.getDiamondInfo);
 
 // Get Diamond info
-router.get('/diamonds/:id/jewellery', DiamondController.getJewelleryForDiamonds);
+router.put('/diamonds/all', jwtValidate, DiamondController.putDiamondUpdateAll);
 
-// Get Diamond info
-router.get('/diamonds/:id/jewellery-count', DiamondController.getCountJewelleryForDiamonds);
-
+// put Diamond info
+router.put('/diamonds/:id', jwtValidate, DiamondController.putDiamondUpdate);
 export default router;

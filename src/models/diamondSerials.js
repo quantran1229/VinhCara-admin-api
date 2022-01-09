@@ -106,14 +106,10 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'productOdooId',
         as: 'generalInfo'
       });
-      DiamondSerial.hasOne(models.WishlistLog, {
-        foreignKey: 'productCode',
-        sourceKey: 'serial',
-        as: 'wishlistInfo',
-        constraints: false,
-        scope: {
-          productType: models.WishlistLog.PRODUCT_TYPE.DIAMOND
-        }
+      DiamondSerial.belongsTo(models.Stock, {
+        foreignKey: 'stockId',
+        targetKey: 'id',
+        as: 'stockInfo'
       });
     }
   };
@@ -143,9 +139,6 @@ module.exports = (sequelize, DataTypes) => {
     tableName: 'diamondSerials',
     timestamps: false,
     defaultScope: {
-      where:{
-        status: DiamondSerial.STATUS.ACTIVE
-      },
       attributes: {
         include: [
           ['serial', 'id']

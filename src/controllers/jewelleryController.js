@@ -16,6 +16,7 @@ import db, {
     Combo,
     NewJewellery,
     WishlistLog,
+    Stock,
     StoreContact,
     Location,
     Diamond,
@@ -284,7 +285,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productCode', 'mainCategory', 'productCategory', 'price', 'type', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
                 ],
                 duplicate: false,
                 include: [{
@@ -360,6 +361,79 @@ export default class JewelleryController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('getNewJewellery ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static getJewellerySerialList = async (ctx, next) => {
+        try {
+            // get current user
+            const query = ctx.request.query;
+            // Query
+            let condition = {}
+            let conditionJewellery;
+            if (query.serial) {
+                condition.serial = {
+                    [Op.iLike]: `%${serial}%`
+                }
+            }
+
+            if (query.productCode) {
+
+                conditionJewellery = {
+                    productCode: query.productCode
+                }
+            }
+            if (query.category) {
+                if (!conditionJewellery) conditionJewellery = {}
+                if (query.category.includes('-')) {
+                    conditionJewellery.category = Sequelize.literal(`'${removeAccent(query.category.trim().toLowerCase())}' = ANY("productCategorySlug")`)
+                } else
+                    conditionJewellery.category = Sequelize.literal(`'${query.category}' = ANY("productCategory")`);
+            }
+            if (query.priceFrom != null && query.priceTo != null) {
+                condition.price = {
+                    [Op.between]: [parseInt(query.priceFrom) || 0, parseInt(query.priceTo) || 0]
+                };
+            } else
+            if (query.priceFrom) {
+                condition.price = {
+                    [Op.gte]: parseInt(query.priceFrom)
+                };
+            } else
+            if (query.priceTo) {
+                condition.price = {
+                    [Op.lte]: parseInt(query.priceTo)
+                };
+            }
+
+            if (query.type) {
+                condition.type = query.type
+            }
+            const pager = paging(query);
+            let result = await JewellerySerial.findAndCountAll(Object.assign({
+                where: condition,
+                include: [{
+                    model: Jewellery,
+                    as: 'generalInfo',
+                    required: conditionJewellery ? true : false,
+                    where: conditionJewellery || {},
+                    attributes: ['productCode', 'productName', 'productCategory', 'productCategorySlug', 'mainCategory', 'mediafiles'],
+                }, {
+                    model: Stock,
+                    as: 'stockInfo',
+                    required: false
+                }]
+            }, pager));
+            // Return list
+            res.setSuccess({
+                count: result.count,
+                list: result.rows
+            }, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('getJewellerySerialList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
