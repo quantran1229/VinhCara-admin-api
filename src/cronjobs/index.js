@@ -50,6 +50,9 @@ var checkVNPay = new CronJob('0 * * * * *', async function () {
 
                 if (order.couponId) {
                     await Coupon.decrement("count", {
+                        where:{
+                            id: order.couponId
+                        },
                         transaction: transaction
                     });
                 }
