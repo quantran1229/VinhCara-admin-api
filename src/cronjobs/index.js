@@ -58,7 +58,7 @@ var checkVNPay = new CronJob('0 * * * * *', async function () {
             Logger.info("Total cancel VNPay orders: " + orders.length)
         } catch (err) {
             await transaction.rollback();
-            Logger.error('cron: checkVNPay ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('cron: checkVNPay ' + err.message + ' ' + err.stack + ' ' + (err.errors && err.errors[0] ? err.errors[0].message : ''));
         }
     }
 });
@@ -95,7 +95,7 @@ var activateCoupon = new CronJob('0 * * * * *', async function () {
             Logger.info("Total activate coupons: " + coupons.length)
         } catch (err) {
             await transaction.rollback();
-            Logger.error('cron: activateCoupon ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('cron: activateCoupon ' + err.message + ' ' + err.stack + ' ' + (err.errors && err.errors[0] ? err.errors[0].message : ''));
         }
     }
 });
@@ -131,7 +131,7 @@ var activateBlog = new CronJob('0 * * * * *', async function () {
             Logger.info("Total activate coupons: " + blogs.length)
         } catch (err) {
             await transaction.rollback();
-            Logger.error('cron: activateBlog ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('cron: activateBlog ' + err.message + ' ' + err.stack + ' ' + (err.errors && err.errors[0] ? err.errors[0].message : ''));
         }
     }
 });
