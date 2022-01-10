@@ -246,8 +246,7 @@ export default class JewelleryController {
             const id = ctx.request.params.id;
             let jewellerySerial = await JewellerySerial.findOne({
                 where: {
-                    serial: id,
-                    type: JewellerySerial.TYPE.FAKE
+                    serial: id
                 },
                 include: [{
                     model: Jewellery,
