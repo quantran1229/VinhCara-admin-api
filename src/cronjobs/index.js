@@ -43,7 +43,7 @@ var checkVNPay = new CronJob('0 * * * * *', async function () {
                     logs: logs,
                     status: Order.STATUS.CANCEL,
                     meta: meta,
-                    note: orders.note + ' SYSTEM CANCEL DUE TO 30 MINS LATE'
+                    note: order.note + ' SYSTEM CANCEL DUE TO 30 MINS LATE'
                 }, {
                     transaction: transaction
                 });
