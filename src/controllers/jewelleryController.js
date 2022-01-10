@@ -614,4 +614,71 @@ export default class JewelleryController {
             return res.send(ctx);
         }
     }
+
+    static getJewelleryCategoryList = async (ctx, next) => {
+        try {
+            const query = ctx.request.query;
+            let condition = {};
+            if (query.parentId) {
+                condition.parentId = query.parentId
+            }
+            let result = await JewelleryCategory.findAll({
+                where: condition,
+                include: [{
+                    model: JewelleryCategory,
+                    as: 'parent',
+                    attributes: ['id', 'name']
+                }, {
+                    model: JewelleryCategory,
+                    as: 'subs',
+                    attributes: ['id', 'name']
+                }]
+            })
+            // Return list
+            res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+
+        } catch (e) {
+            Logger.error('getJewelleryCategoryList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static putJewelleryCategoryUpdate = async (ctx, next) => {
+        try {
+            let id = ctx.request.params.id;
+            let category = await JewelleryCategory.findOne({
+                where: {
+                    id: id
+                }
+            })
+            if (!category) {
+                res.setError(`Not found`, Constant.instance.HTTP_CODE.NotFound, null);
+                return res.send(ctx);
+            }
+            let {
+                size,
+                defaultSize,
+                calculateSize
+            } = ctx.request.body;
+            let updateInfo = {};
+            if (size && size != category.size) {
+                updateInfo.size = size;
+            }
+            if (defaultSize && defaultSize != category.defaultSize) {
+                updateInfo.defaultSize = defaultSize;
+            }
+            if (calculateSize && calculateSize != category.calculateSize) {
+                updateInfo.calculateSize = calculateSize;
+            }
+            category = await category.update(updateInfo);
+            res.setSuccess(category, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putJewelleryCategoryUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
 }

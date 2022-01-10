@@ -11,13 +11,13 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      JewelleryCategory.hasMany(JewelleryCategory,{
+      JewelleryCategory.hasMany(JewelleryCategory, {
         foreignKey: 'parentId',
         sourceKey: 'id',
         as: 'subs'
       })
 
-      JewelleryCategory.belongsTo(JewelleryCategory,{
+      JewelleryCategory.belongsTo(JewelleryCategory, {
         foreignKey: 'parentId',
         targetKey: 'id',
         as: 'parent'
@@ -26,7 +26,10 @@ module.exports = (sequelize, DataTypes) => {
   };
   JewelleryCategory.init({
     name: DataTypes.STRING,
-    parentId: DataTypes.INTEGER
+    parentId: DataTypes.INTEGER,
+    size: DataTypes.ARRAY(DataTypes.STRING),
+    defaultSize: DataTypes.STRING,
+    calculateSize: DataTypes.JSONB
   }, {
     sequelize,
     timestamps: false,
