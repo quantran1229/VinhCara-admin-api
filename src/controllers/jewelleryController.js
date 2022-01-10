@@ -149,6 +149,72 @@ export default class JewelleryController {
         }
     }
 
+    static putJewellerySerialUpdate = async (ctx, next) => {
+        try {
+            const id = ctx.request.params.id;
+            let jewellerySerial = await JewellerySerial.findOne({
+                where: {
+                    serial: id,
+                    type: JewellerySerial.TYPE.FAKE
+                }
+            });
+            if (!jewellerySerial) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+            }
+            let {
+                designForm,
+                diamondSize,
+                hasDiamond,
+                gemstone,
+                goldProperty,
+                price,
+                size,
+                extraProperties,
+                gender,
+                shape
+            } = ctx.request.body;
+            let updateInfo = {}
+            if (designForm && designForm != jewellerySerial.designForm) {
+                updateInfo.designForm = designForm;
+            }
+            if (diamondSize && diamondSize != jewellerySerial.diamondSize) {
+                updateInfo.diamondSize = diamondSize;
+            }
+            if (hasDiamond && hasDiamond != jewellerySerial.hasDiamond) {
+                updateInfo.hasDiamond = hasDiamond;
+            }
+            if (gemstone && gemstone != jewellerySerial.gemstone) {
+                updateInfo.gemstone = gemstone;
+            }
+            if (goldProperty && goldProperty != jewellerySerial.goldProperty) {
+                updateInfo.goldProperty = goldProperty;
+            }
+            if (price && price != jewellerySerial.price) {
+                updateInfo.price = price;
+            }
+            if (extraProperties && extraProperties != jewellerySerial.extraProperties) {
+                updateInfo.extraProperties = extraProperties;
+            }
+            if (shape && shape != jewellerySerial.shape) {
+                updateInfo.shape = shape;
+            }
+            if (gender && gender != jewellerySerial.gender) {
+                updateInfo.gender = gender;
+            }
+            if (size && size != jewellerySerial.size) {
+                updateInfo.size = size;
+            }
+
+            jewellerySerial = await jewellerySerial.update(updateInfo);
+            res.setSuccess(jewellerySerial, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putJewellerySerialUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
     static putJewelleryUpdateAll = async (ctx, next) => {
         try {
             let {

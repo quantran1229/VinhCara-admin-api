@@ -56,4 +56,20 @@ router.put('/jewellery/:id', jwtValidate, validate({
 router.get('/jewellery-category', jwtValidate, JewelleryController.getJewelleryCategoryList);
 
 router.get('/jewellery-serials', jwtValidate, JewelleryController.getJewellerySerialList);
+
+// // Get jewellery info
+router.put('/jewellery-serials/:id', jwtValidate, validate({
+    body: {
+        designForm: 'string?',
+        diamondSize: 'number?',
+        hasDiamond: 'int?',
+        gemstone: 'string?',
+        goldProperty: 'string?',
+        price: 'int?',
+        size: 'string?',
+        gender: 'int?',
+        extraProperties: 'object?',
+        shape: 'string?'
+    }
+}), JewelleryController.putJewelleryUpdate);
 export default router;
