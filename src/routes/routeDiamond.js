@@ -21,4 +21,40 @@ router.put('/diamonds/all', jwtValidate, DiamondController.putDiamondUpdateAll);
 
 // put Diamond info
 router.put('/diamonds/:id', jwtValidate, DiamondController.putDiamondUpdate);
+
+router.get('/diamond-serials/:id', jwtValidate, DiamondController.getDiamondSerialInfo);
+
+router.delete('/diamond-serials/:id', jwtValidate, DiamondController.deleteDiamondSerial);
+
+router.put('/diamond-serials/:id', jwtValidate, validate({
+    body: {
+        caraWeight: 'string?',
+        clarity: 'string?',
+        color: 'string?',
+        cut: 'string?',
+        extraProperties: 'object?',
+        measurements: 'string?',
+        price: 'int?',
+        shape: 'string?',
+        size: 'string?',
+        GIAReportNumber: 'string?'
+    }
+}), DiamondController.putDiamondSerialUpdate);
+
+router.post('/diamond-serials', jwtValidate, validate({
+    body: {
+        serial: 'string',
+        productOdooId: 'int',
+        caraWeight: 'string?',
+        clarity: 'string?',
+        color: 'string?',
+        cut: 'string?',
+        extraProperties: 'object?',
+        measurements: 'string?',
+        price: 'int?',
+        shape: 'string?',
+        size: 'string?',
+        GIAReportNumber: 'string?'
+    }
+}), DiamondController.postDiamondSerialCreate);
 export default router;

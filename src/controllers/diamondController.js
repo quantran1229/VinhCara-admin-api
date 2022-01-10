@@ -538,4 +538,180 @@ export default class DiamondsController {
             return res.send(ctx);
         }
     }
+
+    static putDiamondSerialUpdate = async (ctx, next) => {
+        try {
+            const id = ctx.request.params.id;
+            let diamondSerial = await DiamondSerial.findOne({
+                where: {
+                    serial: id,
+                    type: DiamondSerial.TYPE.FAKE
+                }
+            });
+            if (!diamondSerial) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+            }
+            let {
+                caraWeight,
+                clarity,
+                color,
+                cut,
+                extraProperties,
+                measurements,
+                price,
+                shape,
+                size,
+                GIAReportNumber,
+            } = ctx.request.body;
+            let updateInfo = {}
+            if (caraWeight && caraWeight != diamondSerial.caraWeight) {
+                updateInfo.caraWeight = caraWeight;
+            }
+            if (price && price != diamondSerial.price) {
+                updateInfo.price = price;
+            }
+            if (extraProperties && extraProperties != diamondSerial.extraProperties) {
+                updateInfo.extraProperties = extraProperties;
+            }
+            if (shape && shape != diamondSerial.shape) {
+                updateInfo.shape = shape;
+            }
+            if (clarity && clarity != diamondSerial.clarity) {
+                updateInfo.clarity = clarity;
+            }
+            if (color && color != diamondSerial.color) {
+                updateInfo.color = color;
+            }
+            if (cut && cut != diamondSerial.cut) {
+                updateInfo.cut = cut;
+            }
+            if (measurements && measurements != diamondSerial.measurements) {
+                updateInfo.measurements = measurements;
+            }
+            if (size && size != diamondSerial.size) {
+                updateInfo.size = size;
+            }
+            if (GIAReportNumber && GIAReportNumber != diamondSerial.GIAReportNumber) {
+                updateInfo.GIAReportNumber = GIAReportNumber;
+            }
+
+            diamondSerial = await diamondSerial.update(updateInfo);
+            res.setSuccess(diamondSerial, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putJewellerySerialUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static deleteDiamondSerial = async (ctx, next) => {
+        try {
+            const id = ctx.request.params.id;
+            let diamondSerial = await DiamondSerial.findOne({
+                where: {
+                    serial: id,
+                    type: DiamondSerial.TYPE.FAKE
+                }
+            });
+            if (!diamondSerial) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+            }
+            await diamondSerial.destroy();
+            res.setSuccess(null, Constant.instance.HTTP_CODE.SuccessNoContent);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putJewellerySerialUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static getDiamondSerialInfo = async (ctx, next) => {
+        try {
+            const id = ctx.request.params.id;
+            let diamondSerial = await DiamondSerial.findOne({
+                where: {
+                    serial: id
+                },
+                include: [{
+                    model: Diamond,
+                    required: true,
+                    as: 'generalInfo'
+                }]
+            });
+            if (!diamondSerial) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+            }
+            res.setSuccess(diamondSerial, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('getDiamondSerialInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static postDiamondSerialCreate = async (ctx, next) => {
+        try {
+            let {
+                serial,
+                productOdooId,
+                caraWeight,
+                clarity,
+                color,
+                cut,
+                extraProperties,
+                measurements,
+                price,
+                shape,
+                size,
+                GIAReportNumber,
+                status
+            } = ctx.request.body;
+            let check = await Promise.all([DiamondSerial.findOne({
+                where: {
+                    serial: serial
+                }
+            }), Diamond.findOne({
+                where: {
+                    productOdooId: productOdooId
+                }
+            })]);
+            if (check[0]) {
+                res.setError(`Conflict`, Constant.instance.HTTP_CODE.Conflict, [{
+                    field: 'serial'
+                }]);
+                return res.send(ctx);
+            }
+            if (!check[1]) {
+                res.setError(`Not found`, Constant.instance.HTTP_CODE.NotFound, [{
+                    field: 'productOdooId'
+                }]);
+                return res.send(ctx);
+            }
+
+            let diamondSerial = await DiamondSerial.create({
+                serial,
+                productOdooId,
+                caraWeight,
+                clarity,
+                color,
+                cut,
+                extraProperties,
+                measurements,
+                price,
+                shape,
+                size,
+                GIAReportNumber,
+                status: status || DiamondSerial.STATUS.ACTIVE
+            });
+            res.setSuccess(diamondSerial, Constant.instance.HTTP_CODE.Created);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postJewellerySerialCreate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
 }

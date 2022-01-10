@@ -56,4 +56,40 @@ router.put('/jewellery/:id', jwtValidate, validate({
 router.get('/jewellery-category', jwtValidate, JewelleryController.getJewelleryCategoryList);
 
 router.get('/jewellery-serials', jwtValidate, JewelleryController.getJewellerySerialList);
+
+router.get('/jewellery-serials/:id', jwtValidate, JewelleryController.getJewellerySerialInfo);
+
+router.delete('/jewellery-serials/:id', jwtValidate, JewelleryController.deleteJewellerySerial);
+
+router.put('/jewellery-serials/:id', jwtValidate, validate({
+    body: {
+        designForm: 'string?',
+        diamondSize: 'number?',
+        hasDiamond: 'int?',
+        gemstone: 'string?',
+        goldProperty: 'string?',
+        price: 'int?',
+        size: 'string?',
+        gender: 'int?',
+        extraProperties: 'object?',
+        shape: 'string?'
+    }
+}), JewelleryController.putJewellerySerialUpdate);
+
+router.post('/jewellery-serials', jwtValidate, validate({
+    body: {
+        serial: 'string',
+        productOdooId: 'int',
+        designForm: 'string?',
+        diamondSize: 'number?',
+        hasDiamond: 'int?',
+        gemstone: 'string?',
+        goldProperty: 'string?',
+        price: 'int?',
+        size: 'string?',
+        gender: 'int?',
+        extraProperties: 'object?',
+        shape: 'string?'
+    }
+}), JewelleryController.postJewellerySerialCreate);
 export default router;
