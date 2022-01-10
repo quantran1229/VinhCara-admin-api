@@ -61,6 +61,16 @@ router.get('/jewellery-serials/:id', jwtValidate, JewelleryController.getJewelle
 
 router.delete('/jewellery-serials/:id', jwtValidate, JewelleryController.deleteJewellerySerial);
 
+router.get('/jewellery-categories', jwtValidate, JewelleryController.getJewelleryCategoryList);
+
+router.put('/jewellery-categories/:id', jwtValidate, validate({
+    body: {
+        size: 'array?',
+        defaultSize: 'string?',
+        calculateSize: 'object?'
+    }
+}), JewelleryController.putJewelleryCategoryUpdate);
+
 router.put('/jewellery-serials/:id', jwtValidate, validate({
     body: {
         designForm: 'string?',
