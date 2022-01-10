@@ -15,13 +15,13 @@ import {
 
 //Check 30 mins after VNPay
 var checkVNPay = new CronJob('0 * * * * *', async function () {
-    Logger.info("Start check for VNPay due 30 mins");
+    Logger.info("Start check for VNPay due 35 mins");
     let orders = await Order.findAll({
         where: {
             paymentMethod: Order.PAYMENT_METHOD.ONLINE,
             status: Order.STATUS.WAITING_FOR_PAYMENT,
             createdAt: {
-                [Op.lte]: dayjs().add(-30, 'm').toDate()
+                [Op.lte]: dayjs().add(-35, 'm').toDate()
             }
         }
     });

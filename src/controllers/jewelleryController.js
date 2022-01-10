@@ -171,7 +171,8 @@ export default class JewelleryController {
                 size,
                 extraProperties,
                 gender,
-                shape
+                shape,
+                status
             } = ctx.request.body;
             let updateInfo = {}
             if (designForm && designForm != jewellerySerial.designForm) {
@@ -204,12 +205,122 @@ export default class JewelleryController {
             if (size && size != jewellerySerial.size) {
                 updateInfo.size = size;
             }
+            if (status && status != jewellerySerial.status) {
+                updateInfo.status = status;
+            }
 
             jewellerySerial = await jewellerySerial.update(updateInfo);
             res.setSuccess(jewellerySerial, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('putJewellerySerialUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static deleteJewellerySerial = async (ctx, next) => {
+        try {
+            const id = ctx.request.params.id;
+            let jewellerySerial = await JewellerySerial.findOne({
+                where: {
+                    serial: id,
+                    type: JewellerySerial.TYPE.FAKE
+                }
+            });
+            if (!jewellerySerial) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+            }
+            await jewellerySerial.destroy();
+            res.setSuccess(null, Constant.instance.HTTP_CODE.SuccessNoContent);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putJewellerySerialUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static getJewellerySerialInfo = async (ctx, next) => {
+        try {
+            const id = ctx.request.params.id;
+            let jewellerySerial = await JewellerySerial.findOne({
+                where: {
+                    serial: id,
+                    type: JewellerySerial.TYPE.FAKE
+                },
+                include: [{
+                    model: Jewellery,
+                    required: true,
+                    as: 'generalInfo'
+                }]
+            });
+            if (!jewellerySerial) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+            }
+            res.setSuccess(jewellerySerial, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putJewellerySerialUpdate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static postJewellerySerialCreate = async (ctx, next) => {
+        try {
+            let {
+                serial,
+                productOdooId,
+                diamondSize,
+                gemstone,
+                goldProperty,
+                hasDiamond,
+                size,
+                gender,
+                extraProperties,
+                price,
+                status
+            } = ctx.request.body;
+            let check = await Promise.all([JewellerySerial.findOne({
+                where: {
+                    serial: serial
+                }
+            }), Jewellery.findOne({
+                where: {
+                    productOdooId: productOdooId
+                }
+            })]);
+            if (check[0]) {
+                res.setError(`Conflict`, Constant.instance.HTTP_CODE.Conflict, [{
+                    field: 'serial'
+                }]);
+                return res.send(ctx);
+            }
+            if (!check[1]) {
+                res.setError(`Not found`, Constant.instance.HTTP_CODE.NotFound, [{
+                    field: 'productOdooId'
+                }]);
+                return res.send(ctx);
+            }
+
+            let jewellerySerial = await JewellerySerial.create({
+                serial,
+                productOdooId,
+                diamondSize,
+                gemstone,
+                goldProperty,
+                hasDiamond,
+                size,
+                gender,
+                extraProperties,
+                price,
+                status: status || JewellerySerial.STATUS.ACTIVE
+            });
+            res.setSuccess(jewellerySerial, Constant.instance.HTTP_CODE.Created);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postJewellerySerialCreate ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
@@ -351,7 +462,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
                 ],
                 duplicate: false,
                 include: [{
