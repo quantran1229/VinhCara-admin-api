@@ -681,4 +681,69 @@ export default class JewelleryController {
             return res.send(ctx);
         }
     }
+
+    
+    static postJewelleryNewOrder = async (ctx, next) => {
+        let transaction;
+        try {
+            let {
+                list
+            } = ctx.request.body;
+            // validate product
+            let productCodeList = await Jewellery.findAll({
+                where: {
+                    productCode: list.map(e => e.productCode)
+                }
+            });
+            if (productCodeList.length != list.length) {
+                res.setError(`Bad request`, Constant.instance.HTTP_CODE.InternalError, [{
+                    msg:"productCode not found"
+                }]);
+                return res.send(ctx);
+            }
+            transaction = await db.sequelize.transaction();
+            for (let i of list) {
+                let x = await NewJewellery.findOne({
+                    where:{
+                        order: i.order
+                    }
+                });
+                if (x) await x.destroy({
+                    transaction
+                });
+                await NewJewellery.create({
+                    productCode: i.productCode,
+                    order: i.order
+                },{
+                    transaction
+                })
+            }
+            await transaction.commit();
+            res.setSuccess(null, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            if (transaction) await transaction.rollback();
+            Logger.error('postJewelleryNewOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static deleteNewProductOrder= async (ctx, next) => {
+        try {
+            let id = ctx.request.params.id;
+            // validate product
+            await NewJewellery.destroy({
+                where: {
+                    productCode: id
+                }
+            })
+            res.setSuccess(null, Constant.instance.HTTP_CODE.SuccessNoContent);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postJewelleryNewOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
 }
