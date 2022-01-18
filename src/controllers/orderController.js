@@ -141,10 +141,18 @@ export default class OrderController {
                     [Op.lte]: dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()
                 };
             }
+            if (query.customerId) {
+                condition.userId = query.customerId;
+            }
+            if (query.customerType == 2) {
+                condition.userId = {
+                    [Op.not]: null
+                }
+            }
             let pager = paging(query);
             const result = await Order.findAndCountAll(Object.assign({
                 where: condition,
-                attributes: ['id', 'code', 'recieverName', 'phone', 'address', 'status', 'createdAt', 'isGift', 'giftAddress', 'totalPrice'],
+                attributes: ['id', 'code', 'recieverName', 'phone', 'address', 'status', 'createdAt', 'isGift', 'giftAddress', 'totalPrice', 'paymentMethod'],
                 include: [{
                     model: Location,
                     as: 'districtInfo',
