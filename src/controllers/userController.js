@@ -66,11 +66,11 @@ export default class UserController {
                         email: email
                     }
                 }),
-                User.findOne({
+                phone ? User.findOne({
                     where: {
                         phone: phone
                     }
-                })
+                }) : null
             ]);
             // Validate info from database
             if (checkDuplicate[0] || checkDuplicate[1]) {
