@@ -17,7 +17,7 @@ router.post('/users', validate({
     body: {
         phone: {
             type: 'string',
-            required: true,
+            required: false,
             format: /^\d+$/
         },
         email: {
