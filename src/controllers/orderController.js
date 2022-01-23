@@ -2,6 +2,9 @@ import Logger from '../utils/logger';
 import Response from '../utils/response';
 import Constant from '../constants';
 import {
+    remove as removeAccent
+} from 'diacritics'
+import {
     getRandomString,
     paging
 } from '../utils/utils';
@@ -106,7 +109,7 @@ export default class OrderController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             if (query.status) {
                 condition.status = query.status;
             }
@@ -149,10 +152,75 @@ export default class OrderController {
                     [Op.not]: null
                 }
             }
+            if (query.keyword) {
+                let keyword = removeAccent(query.keyword).toLowerCase();
+                condition = {
+                    [Op.or]: [{
+                            isGift: false,
+                            recieverName: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            isGift: true,
+                            giftRecieverName: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }, {
+                            isGift: false,
+                            phone: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }, {
+                            isGift: true,
+                            giftPhone: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            code: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }
+                    ]
+                }
+            }
+            let order = [
+                ['createdAt', 'DESC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'newest':
+                        order = [
+                            ['createdAt', 'DESC']
+                        ];
+                        break;
+                    case 'statusASC':
+                        order = [
+                            ['status', 'DESC']
+                        ];
+                        break;
+                    case 'statusDESC':
+                        order = [
+                            ['status', 'DESC']
+                        ];
+                        break;
+                    case 'priceASC':
+                        order = [
+                            ['totalPrice', 'ASC']
+                        ];
+                        break;
+                    case 'priceDESC':
+                        order = [
+                            ['totalPrice', 'DESC']
+                        ];
+                        break;
+                }
+            }
             let pager = paging(query);
             const result = await Order.findAndCountAll(Object.assign({
                 where: condition,
-                attributes: ['id', 'code', 'recieverName', 'phone', 'address', 'status', 'createdAt', 'isGift', 'giftAddress', 'totalPrice', 'paymentMethod'],
+                attributes: ['id', 'code', 'recieverName', 'phone', 'address', 'status', 'createdAt', 'isGift', 'giftRecieverName', 'giftPhone', 'giftAddress', 'totalPrice', 'paymentMethod'],
                 include: [{
                     model: Location,
                     as: 'districtInfo',
