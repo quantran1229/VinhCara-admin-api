@@ -2,6 +2,7 @@ import Logger from '../utils/logger';
 import Response from '../utils/response';
 import Constant from '../constants';
 import bcrypt from 'bcrypt';
+import dayjs from 'dayjs';
 import {
     sign
 } from 'jsonwebtoken';
@@ -349,9 +350,31 @@ export default class UserController {
                 name,
                 email,
                 userType,
-                status
+                keyword,
+                status,
+                createdFrom,
+                createdTo,
+                orderBy
             } = ctx.request.query;
             let condition = {};
+            if (keyword) {
+                keyword = removeAccent(keyword).toLowerCase();
+                condition = {
+                    [Op.or]: [{
+                        phone: {
+                            [Op.iLike]: `%${keyword}%`
+                        }
+                    }, {
+                        name: {
+                            [Op.iLike]: `%${keyword}%`
+                        }
+                    }, {
+                        email: {
+                            [Op.iLike]: `%${keyword}%`
+                        }
+                    }]
+                }
+            }
             if (phone) {
                 condition.phone = {
                     [Op.like]: `%${phone}%`
@@ -374,6 +397,41 @@ export default class UserController {
                     [Op.iLike]: `%${name}%`
                 });
             }
+            if (createdFrom && createdTo) {
+                condition.createdAt = {
+                    [Op.between]: [dayjs(createdFrom, 'YYYY-MM-DD').startOf('day').toDate(), dayjs(createdTo, 'YYYY-MM-DD').endOf('day').toDate()]
+                }
+            } else if (createdTo) {
+                condition.createdAt = {
+                    [Op.lte]: dayjs(createdTo).endOf('day').toDate()
+                }
+            } else if (createdFrom) {
+                condition.createdAt = {
+                    [Op.gte]: dayjs(createdFrom).startOf('day').toDate()
+                }
+            }
+            let order = [
+                ['createdAt', 'DESC']
+            ];
+            if (orderBy) {
+                switch (orderBy) {
+                    case "newest":
+                        order = [
+                            ['createdAt', 'DESC']
+                        ];
+                        break
+                    case "nameASC":
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break
+                    case "nameDESC":
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break
+                }
+            }
             let pager = paging(ctx.request.query);
             let result = await User.findAndCountAll(Object.assign({
                 where: condition,
@@ -383,9 +441,7 @@ export default class UserController {
                     as: 'typeInfo',
                     attributes: ['id', 'name']
                 }],
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                order: order
             }, pager));
             res.setSuccess({
                 count: result.count,
