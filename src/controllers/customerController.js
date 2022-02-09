@@ -45,7 +45,7 @@ export default class CustomerController {
                     required: false,
                     model: Order,
                     as: 'orders',
-                    attributes: ['id', 'code', 'createdAt', 'status', 'paymentMethod', 'totalPrice'],
+                    attributes: ['id', 'code', 'createdAt', 'status', 'paymentMethod', 'totalPrice', 'totalCost', 'totalDiscount'],
                     include: [{
                         required: false,
                         model: OrderItem,
@@ -267,13 +267,12 @@ export default class CustomerController {
             if (avatar && avatar != customer.avatar) {
                 updateInfo.avatar = avatar;
             }
-            if (password){
+            if (password) {
                 const saltRounds = Constant.instance.DEFAULT_CUSTOMER_SALT_ROUND;
                 let hashPassword = bcrypt.hashSync(password, saltRounds);
                 updateInfo.password = hashPassword;
             }
-            if (status)
-            {
+            if (status) {
                 updateInfo.status = status;
             }
             // update
