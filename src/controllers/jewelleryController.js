@@ -461,7 +461,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
                 ],
                 duplicate: false,
                 include: [{
@@ -682,7 +682,7 @@ export default class JewelleryController {
         }
     }
 
-    
+
     static postJewelleryNewOrder = async (ctx, next) => {
         let transaction;
         try {
@@ -697,14 +697,14 @@ export default class JewelleryController {
             });
             if (productCodeList.length != list.length) {
                 res.setError(`Bad request`, Constant.instance.HTTP_CODE.InternalError, [{
-                    msg:"productCode not found"
+                    msg: "productCode not found"
                 }]);
                 return res.send(ctx);
             }
             transaction = await db.sequelize.transaction();
             for (let i of list) {
                 let x = await NewJewellery.findOne({
-                    where:{
+                    where: {
                         order: i.order
                     }
                 });
@@ -714,7 +714,7 @@ export default class JewelleryController {
                 await NewJewellery.create({
                     productCode: i.productCode,
                     order: i.order
-                },{
+                }, {
                     transaction
                 })
             }
@@ -729,7 +729,7 @@ export default class JewelleryController {
         }
     }
 
-    static deleteNewProductOrder= async (ctx, next) => {
+    static deleteNewProductOrder = async (ctx, next) => {
         try {
             let id = ctx.request.params.id;
             // validate product
