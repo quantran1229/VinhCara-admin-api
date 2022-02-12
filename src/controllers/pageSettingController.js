@@ -92,6 +92,9 @@ export default class PageSettingController {
             if (SEOInfo && SEOInfo != pageSetting.SEOInfo) {
                 updateInfo.SEOInfo = SEOInfo
             }
+            if (setting && setting != pageSetting.setting) {
+                updateInfo.setting = setting
+            }
             if (parentId && parentId != pageSetting.parentId) {
                 let pageSettingParentId = await PageSetting.findOne({
                     where: {
