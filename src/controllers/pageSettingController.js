@@ -110,9 +110,14 @@ export default class PageSettingController {
             if (banner && banner != pageSetting.banner) {
                 updateInfo.banner = banner
             }
-            pageSetting = await PageSetting.update(updateInfo, {
+            await PageSetting.update(updateInfo, {
                 where: {
                     id: pageSetting.id
+                }
+            });
+            pageSetting = await PageSetting.findOne({
+                where: {
+                    link: link
                 }
             });
             // Return info
