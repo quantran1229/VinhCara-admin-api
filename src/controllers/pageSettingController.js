@@ -117,7 +117,7 @@ export default class PageSettingController {
             });
             pageSetting = await PageSetting.findOne({
                 where: {
-                    link: link
+                    link: pageSetting.id
                 }
             });
             // Return info
