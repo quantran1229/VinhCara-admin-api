@@ -92,6 +92,9 @@ export default class PageSettingController {
             if (SEOInfo && SEOInfo != pageSetting.SEOInfo) {
                 updateInfo.SEOInfo = SEOInfo
             }
+            if (setting && setting != pageSetting.setting) {
+                updateInfo.setting = setting
+            }
             if (parentId && parentId != pageSetting.parentId) {
                 let pageSettingParentId = await PageSetting.findOne({
                     where: {
@@ -113,7 +116,7 @@ export default class PageSettingController {
                 }
             });
             // Return info
-            res.setSuccess(setting, Constant.instance.HTTP_CODE.Success);
+            res.setSuccess(pageSetting, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('putPageSettingInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
