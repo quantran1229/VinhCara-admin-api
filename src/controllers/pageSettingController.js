@@ -113,7 +113,7 @@ export default class PageSettingController {
                 }
             });
             // Return info
-            res.setSuccess(setting, Constant.instance.HTTP_CODE.Success);
+            res.setSuccess(pageSetting, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('putPageSettingInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
