@@ -34,7 +34,27 @@ export default class BLogController {
             const {
                 query
             } = ctx.request;
-            const condition = {};
+            let condition = {};
+            if (query.ids) {
+                let listIdsAndSlugs = query.ids.split(',')
+                let ids = listIdsAndSlugs.filter(id => !isNaN(id)).map(value => parseInt(value))
+                let slugs = listIdsAndSlugs.filter(slug => isNaN(slug))
+                condition = {
+                    ...condition,
+                    [Op.or]: [
+                        {
+                            id: {
+                                [Op.in]: ids
+                            },
+                        },
+                        {
+                            slug: {
+                                [Op.in]: slugs
+                            }
+                        }
+                    ]
+                }
+            }
             if (query.name) {
                 condition.title = {
                     [Op.iLike]: `%${query.name}%`
@@ -182,7 +202,7 @@ export default class BLogController {
                 }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
                 return res.send(ctx);
             }
-            if(type) {
+            if (type) {
                 let blogType = await BlogType.findOne({
                     where: {
                         id: type
