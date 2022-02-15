@@ -5,7 +5,9 @@ import dayjs from 'dayjs';
 import db, {
     Order,
     Coupon,
-    Blog
+    Blog,
+    Jewellery,
+    JewellerySerial
 } from '../models';
 import Logger from '../utils/logger';
 import {
@@ -50,7 +52,7 @@ var checkVNPay = new CronJob('0 * * * * *', async function () {
 
                 if (order.couponId) {
                     await Coupon.decrement("count", {
-                        where:{
+                        where: {
                             id: order.couponId
                         },
                         transaction: transaction
@@ -67,6 +69,61 @@ var checkVNPay = new CronJob('0 * * * * *', async function () {
 });
 
 checkVNPay.start();
+
+var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
+    Logger.info("Recalculate price");
+    let list = await Jewellery.findAll({
+        where: {
+            isShowOnWeb: true,
+            isLuxury: false
+        },
+        attributes: ['productCode', 'price', 'type'],
+        include: [{
+            model: JewellerySerial,
+            as: 'serialList',
+            required: false,
+            attributes: ['type', 'price', 'gender']
+        }],
+        order: [
+            [{
+                model: JewellerySerial,
+                as: 'serialList',
+            }, 'type', 'ASC'],
+            [{
+                model: JewellerySerial,
+                as: 'serialList',
+            }, 'price', 'ASC']
+        ],
+        logging: false
+    });
+    for (let jew of list) {
+        if (jew.serialList.length > 0) {
+            if (jew.type == Jewellery.TYPE.DOUBLE) {
+                let price = (jew.serialList.find(e => e.gender == 1) ? parseInt(jew.serialList.find(e => e.gender == 1).price) : 0) + (jew.serialList.find(e => e.gender == 2) ? parseInt(jew.serialList.find(e => e.gender == 2).price) : 0);
+                await jew.update({
+                    price: price
+                }, {
+                    logging: false
+                });
+            } else {
+                await jew.update({
+                    price: jew.serialList[0].price
+                }, {
+                    logging: false
+                })
+            }
+        } else {
+            await jew.update({
+                price: null
+            }, {
+                logging: false
+            });
+        }
+    }
+    Logger.info("Recalculate price done");
+});
+
+recalculatePrice.start();
 
 // Activate Coupon
 var activateCoupon = new CronJob('0 * * * * *', async function () {
