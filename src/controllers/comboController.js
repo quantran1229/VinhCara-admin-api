@@ -272,4 +272,44 @@ export default class ComboController {
             return res.send(ctx);
         }
     }
+
+    static postAddJewelleryInCombo = async (ctx, next) => {
+        try {
+            const {
+                id,
+                jewelleryId
+            } = ctx.request.params
+            let respCombo = await Combo.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (!respCombo) {
+                res.setError("Combo Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            };
+            let jewellery = await Jewellery.findOne({
+                where: {
+                    productCode: jewelleryId
+                }
+            });
+            if (!jewellery) {
+                res.setError("Jewellery Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            let updateInfo = {}
+            let productCode = [...new Set(respCombo.productCode)];
+            productCode.push(jewellery.productCode);
+            updateInfo.productCode = [...new Set(productCode)];
+
+            respCombo = await respCombo.update(updateInfo);
+            // Return info
+            res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postJewelleryInCombo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
 }

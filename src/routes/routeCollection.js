@@ -99,8 +99,10 @@ router.put('/collections/:id',validate({
     }
 }), jwtValidate, CollectionController.putUpdateCollection)
 
-router.delete('/collections/:id', jwtValidate, CollectionController.deleteCollection)
+router.delete('/collections/:id', jwtValidate, CollectionController.deleteCollection);
 
-router.delete('/collections/:id/:jewelleryId', jwtValidate, CollectionController.deleteJewelleryInCollection)
+router.delete('/collections/:id/:jewelleryId', jwtValidate, CollectionController.deleteJewelleryInCollection);
+
+router.post('/collections/:id/:jewelleryId', jwtValidate, CollectionController.postAddJewelleryInCollection);
 
 export default router;

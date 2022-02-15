@@ -92,6 +92,6 @@ router.put('/combo/:id',validate({
 
 router.delete('/combo/:id', jwtValidate, ComboController.deleteCombo)
 
-router.delete('/combo/:id/:jewelleryId', jwtValidate, ComboController.deleteJewelleryInCombo)
-
+router.delete('/combo/:id/:jewelleryId', jwtValidate, ComboController.deleteJewelleryInCombo);
+router.post('/combo/:id/:jewelleryId', jwtValidate, ComboController.postAddJewelleryInCombo);
 export default router;
