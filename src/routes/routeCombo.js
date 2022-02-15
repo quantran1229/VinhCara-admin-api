@@ -75,10 +75,6 @@ router.put('/combo/:id',validate({
             required: false,
             itemType: 'string'
         },
-        SEOInfo: {
-            type: 'object',
-            required: false
-        },
         bannerInfo: {
             type: 'object',
             required: false
@@ -89,6 +85,15 @@ router.put('/combo/:id',validate({
         },
     }
 }), jwtValidate, ComboController.putUpdateCombo)
+
+router.put('/combo/seoInfo/:id',validate({
+    body: {
+        SEOInfo: {
+            type: 'object',
+            required: false
+        }
+    }
+}), jwtValidate, ComboController.putUpdateSeoInfoCombo)
 
 router.delete('/combo/:id', jwtValidate, ComboController.deleteCombo)
 
