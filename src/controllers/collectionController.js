@@ -341,7 +341,8 @@ export default class CollectionController {
                 productCode,
                 SEOInfo,
                 status,
-                bannerInfo
+                bannerInfo,
+                createdBy: ctx.state.user.id,
             })
             res.setSuccess(collection, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);
