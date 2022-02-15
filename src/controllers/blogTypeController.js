@@ -1,17 +1,35 @@
-import {BlogType} from '../models';
+import {BlogType, Blog} from '../models';
 import Logger from '../utils/logger';
 import Response from '../utils/response';
 import Constant from '../constants';
 import {
     buildSlug
 } from '../utils/utils'
+import {
+    Sequelize
+} from 'sequelize'
 
 const res = new Response();
 
 export default class BLogTypeController {
     static async getListBlogTypes(ctx, next) {
         try {
-            const result = await BlogType.findAll({})
+            const { popular } = ctx.request.query
+            let objectQuery = popular ? {
+                attributes: {
+                    include: [[Sequelize.fn("COUNT", Sequelize.col("blogs.id")), "countBlogs"]]
+                },
+                include: [
+                    {
+                        model: Blog,
+                        as:"blogs",
+                        attributes: []
+                    }
+                ],
+                group: ['BlogType.id'],
+                order: [[Sequelize.literal(' "countBlogs" '), 'DESC']]
+            } : {}
+            const result = await BlogType.findAll(objectQuery)
             if (!result) {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
