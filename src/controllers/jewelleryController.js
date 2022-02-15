@@ -58,7 +58,7 @@ export default class JewelleryController {
                 })
             ]);
             jewellery.dataValues.collectionList = collectionAndCombo[0];
-            jewellery.dataValues.comboList = collectionAndCombo[0];
+            jewellery.dataValues.comboList = collectionAndCombo[1];
             res.setSuccess(jewellery, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
