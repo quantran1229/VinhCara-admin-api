@@ -57,6 +57,7 @@ module.exports = (sequelize, DataTypes) => {
     SEOInfo: DataTypes.JSONB,
     status: DataTypes.INTEGER,
     bannerInfo: DataTypes.JSONB,
+    createdBy: DataTypes.INTEGER,
     desc: DataTypes.TEXT
   }, {
     sequelize,
