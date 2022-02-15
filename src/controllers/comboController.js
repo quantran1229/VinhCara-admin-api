@@ -194,8 +194,6 @@ export default class ComboController {
             // Return info
             res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
-            res.setSuccess(combo, Constant.instance.HTTP_CODE.Created);
-            return res.send(ctx);
         } catch (e) {
             Logger.error('putUpdateCombo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
