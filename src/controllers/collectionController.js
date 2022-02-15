@@ -361,7 +361,6 @@ export default class CollectionController {
                 meta,
                 name,
                 productCode,
-                SEOInfo,
                 status,
                 bannerInfo
             } = ctx.request.body;
@@ -393,9 +392,6 @@ export default class CollectionController {
             if (productCode && !isEqual(productCode, respCollection.productCode)) {
                 updateInfo.productCode = productCode
             }
-            if (SEOInfo && !isEqual(SEOInfo, respCollection.SEOInfo)) {
-                updateInfo.SEOInfo = SEOInfo
-            }
             if (bannerInfo && !isEqual(bannerInfo, respCollection.bannerInfo)) {
                 updateInfo.bannerInfo = bannerInfo
             }
@@ -405,6 +401,36 @@ export default class CollectionController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('putUpdateCollection ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static putUpdateSeoInfoCollection = async (ctx, next) => {
+        try {
+            const { id } = ctx.request.params
+            const {
+                SEOInfo,
+            } = ctx.request.body;
+            let updateInfo = {};
+            let respCollection = await Collection.findOne({
+                where: {
+                    id: id
+                }
+            })
+            if (!respCollection) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            if (SEOInfo && !isEqual(SEOInfo, respCollection.SEOInfo)) {
+                updateInfo.SEOInfo = SEOInfo
+            }
+            respCollection = await respCollection.update(updateInfo);
+            // Return info
+            res.setSuccess(respCollection, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putUpdateSeoInfoCollection ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
