@@ -132,7 +132,8 @@ export default class ComboController {
                 productCode,
                 SEOInfo,
                 status,
-                bannerInfo
+                bannerInfo,
+                createdBy: ctx.state.user.id,
             })
             res.setSuccess(combo, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);

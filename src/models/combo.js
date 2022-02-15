@@ -56,7 +56,8 @@ module.exports = (sequelize, DataTypes) => {
     productCode: DataTypes.ARRAY(DataTypes.STRING),
     SEOInfo: DataTypes.JSONB,
     status: DataTypes.INTEGER,
-    bannerInfo: DataTypes.JSONB
+    bannerInfo: DataTypes.JSONB,
+    createdBy: DataTypes.INTEGER,
   }, {
     sequelize,
     modelName: 'Combo',
