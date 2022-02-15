@@ -84,10 +84,6 @@ router.put('/collections/:id',validate({
             required: false,
             itemType: 'string'
         },
-        SEOInfo: {
-            type: 'object',
-            required: false
-        },
         bannerInfo: {
             type: 'object',
             required: false
@@ -98,6 +94,15 @@ router.put('/collections/:id',validate({
         },
     }
 }), jwtValidate, CollectionController.putUpdateCollection)
+
+router.put('/collections/seoInfo/:id',validate({
+    body: {
+        SEOInfo: {
+            type: 'object',
+            required: false
+        },
+    }
+}), jwtValidate, CollectionController.putUpdateSeoInfoCollection)
 
 router.delete('/collections/:id', jwtValidate, CollectionController.deleteCollection)
 

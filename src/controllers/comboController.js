@@ -158,7 +158,6 @@ export default class ComboController {
                 meta,
                 name,
                 productCode,
-                SEOInfo,
                 status,
                 bannerInfo,
                 desc
@@ -194,9 +193,6 @@ export default class ComboController {
             if (productCode && !isEqual(productCode, respCombo.productCode)) {
                 updateInfo.productCode = productCode
             }
-            if (SEOInfo && !isEqual(SEOInfo, respCombo.SEOInfo)) {
-                updateInfo.SEOInfo = SEOInfo
-            }
             if (bannerInfo && !isEqual(bannerInfo, respCombo.bannerInfo)) {
                 updateInfo.bannerInfo = bannerInfo
             }
@@ -206,6 +202,36 @@ export default class ComboController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('putUpdateCombo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static putUpdateSeoInfoCombo = async (ctx, next) => {
+        try {
+            const { id } = ctx.request.params
+            const {
+                SEOInfo
+            } = ctx.request.body;
+            let updateInfo = {};
+            let respCombo = await Combo.findOne({
+                where: {
+                    id: id
+                }
+            })
+            if (!respCombo) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            if (SEOInfo && !isEqual(SEOInfo, respCombo.SEOInfo)) {
+                updateInfo.SEOInfo = SEOInfo
+            }
+            respCombo = await respCombo.update(updateInfo);
+            // Return info
+            res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putUpdateSeoInfoCombo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
