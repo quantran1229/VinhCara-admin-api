@@ -18,6 +18,7 @@ module.exports = (sequelize, DataTypes) => {
       let include = [{
         model: sequelize.models.JewellerySerial,
         as: 'serialList',
+        required: false
       }];
       return this.findOne({
         where: {
