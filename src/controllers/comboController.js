@@ -15,7 +15,9 @@ import {
 import {
     paging
 } from '../utils/utils'
-import {isEqual} from 'lodash'
+import {
+    isEqual
+} from 'lodash'
 
 const res = new Response();
 
@@ -85,7 +87,7 @@ export default class ComboController {
             res.setSuccess(combo, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getComboInfo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('getComboInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
@@ -106,7 +108,7 @@ export default class ComboController {
             res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getComboList ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('getComboList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
@@ -122,7 +124,8 @@ export default class ComboController {
                 productCode,
                 SEOInfo,
                 status,
-                bannerInfo
+                bannerInfo,
+                desc
             } = ctx.request.body;
             let combo = await Combo.create({
                 link,
@@ -133,12 +136,13 @@ export default class ComboController {
                 SEOInfo,
                 status,
                 bannerInfo,
+                desc,
                 createdBy: ctx.state.user.id,
             })
             res.setSuccess(combo, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('postCreateCombo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('postCreateCombo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
@@ -146,7 +150,9 @@ export default class ComboController {
 
     static putUpdateCombo = async (ctx, next) => {
         try {
-            const { id } = ctx.request.params
+            const {
+                id
+            } = ctx.request.params
             const {
                 link,
                 mediafiles,
@@ -154,7 +160,8 @@ export default class ComboController {
                 name,
                 productCode,
                 status,
-                bannerInfo
+                bannerInfo,
+                desc
             } = ctx.request.body;
             let updateInfo = {};
             let respCombo = await Combo.findOne({
@@ -171,6 +178,9 @@ export default class ComboController {
             }
             if (name && name != respCombo.name) {
                 updateInfo.name = name
+            }
+            if (desc && desc != respCombo.desc) {
+                updateInfo.desc = desc
             }
             if (status && status != respCombo.status) {
                 updateInfo.status = status
@@ -192,7 +202,7 @@ export default class ComboController {
             res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('putUpdateCombo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('putUpdateCombo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
@@ -230,7 +240,9 @@ export default class ComboController {
 
     static deleteCombo = async (ctx, next) => {
         try {
-            const { id } = ctx.request.params
+            const {
+                id
+            } = ctx.request.params
             let respCombo = await Combo.findOne({
                 where: {
                     id: id
@@ -242,13 +254,15 @@ export default class ComboController {
             }
             await Combo.destroy({
                 where: {
-                    id:id
+                    id: id
                 }
             })
-            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
+            res.setSuccess({
+                deleted: true
+            }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('deleteCombo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('deleteCombo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
@@ -256,7 +270,10 @@ export default class ComboController {
 
     static deleteJewelleryInCombo = async (ctx, next) => {
         try {
-            const { id, jewelleryId } = ctx.request.params
+            const {
+                id,
+                jewelleryId
+            } = ctx.request.params
             let respCombo = await Combo.findOne({
                 where: {
                     id: id
@@ -268,7 +285,7 @@ export default class ComboController {
             }
             let updateInfo = {}
             let index = respCombo.productCode.findIndex(item => item === jewelleryId)
-            if(index !== -1) {
+            if (index !== -1) {
                 respCombo.productCode.splice(index, 1)
                 updateInfo.productCode = respCombo.productCode
             }
@@ -277,7 +294,7 @@ export default class ComboController {
             res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('deleteJewelleryInCombo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('deleteJewelleryInCombo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
