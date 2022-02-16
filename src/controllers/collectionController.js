@@ -484,13 +484,14 @@ export default class CollectionController {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
-            let updateInfo = {}
-            let index = respCollection.productCode.findIndex(item => item === jewelleryId)
+            let productCode = [...new Set(respCollection.productCode)];
+            let index = productCode.findIndex(item => item === jewelleryId)
             if (index !== -1) {
-                respCollection.productCode.splice(index, 1)
-                updateInfo.productCode = respCollection.productCode
+                productCode.splice(index, 1)
             }
-            respCollection = await respCollection.update(updateInfo);
+            respCollection = await respCollection.update({
+                productCode: [... new Set(productCode)]
+            });
             // Return info
             res.setSuccess(respCollection, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
