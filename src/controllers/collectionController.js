@@ -507,7 +507,7 @@ export default class CollectionController {
                 id,
                 jewelleryId
             } = ctx.request.params
-            let respCollection = await CrespCollection.findOne({
+            let respCollection = await Collection.findOne({
                 where: {
                     id: id
                 }
