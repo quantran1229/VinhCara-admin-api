@@ -283,13 +283,14 @@ export default class ComboController {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
-            let updateInfo = {}
-            let index = respCombo.productCode.findIndex(item => item === jewelleryId)
+            let productCode = [...new Set(respCombo.productCode)];
+            let index = productCode.findIndex(item => item === jewelleryId)
             if (index !== -1) {
-                respCombo.productCode.splice(index, 1)
-                updateInfo.productCode = respCombo.productCode
+                productCode.splice(index, 1)
             }
-            respCombo = await respCombo.update(updateInfo);
+            respCombo = await respCombo.update({
+                productCode: [... new Set(productCode)]
+            });
             // Return info
             res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
