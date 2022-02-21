@@ -82,7 +82,7 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
             model: JewellerySerial,
             as: 'serialList',
             required: false,
-            attributes: ['type', 'price', 'gender']
+            attributes: ['type', 'price', 'gender','size']
         }],
         order: [
             [{
@@ -107,7 +107,8 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
                 });
             } else {
                 await jew.update({
-                    price: jew.serialList[0].price
+                    price: jew.serialList[0].price,
+                    size: jew.serialList[0].size
                 }, {
                     logging: false
                 })
