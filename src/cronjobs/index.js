@@ -106,6 +106,7 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
                     logging: false
                 });
             } else {
+                if (jew.price != jew.serialList[0].price)
                 await jew.update({
                     price: jew.serialList[0].price,
                     size: jew.serialList[0].size
