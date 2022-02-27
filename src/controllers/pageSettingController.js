@@ -11,6 +11,7 @@ import {
 import db, {
     PageSetting
 } from '../models';
+import dayjs from 'dayjs';
 
 const res = new Response();
 
@@ -40,7 +41,17 @@ export default class PageSettingController {
 
     static getPageSettingList = async (ctx, next) => {
         try {
-            const pages = await PageSetting.findAll();
+            const query = ctx.request.query;
+            const condition = {};
+            if (query.keyword) {
+                query.keyword = removeAccent(query.keyword);
+                condition.name = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('name')), {
+                    [Op.iLike]: `%${query.keyword}%`
+                });
+            }
+            const pages = await PageSetting.findAll({
+                where: condition
+            });
             // Return list
             res.setSuccess(pages, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);

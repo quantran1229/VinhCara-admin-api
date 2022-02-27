@@ -5,12 +5,28 @@ import Constant from '../constants';
 import {
     buildSlug
 } from '../utils/utils'
+import {
+    remove as removeAccent
+} from 'diacritics'
+import {
+    Op,
+    Sequelize
+} from 'sequelize'
+
 const res = new Response();
 
 export default class TagController {
     static async getListTags(ctx, next) {
         try {
-            const result = await Tag.findAll({})
+            const query = ctx.request.query;
+            const condition = {};
+            if (query.keyword) {
+                query.keyword = removeAccent(query.keyword);
+                condition.title = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('title')), {
+                    [Op.iLike]: `%${query.keyword}%`
+                });
+            }
+            const result = await Tag.findAll({where: condition})
             if (!result) {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);

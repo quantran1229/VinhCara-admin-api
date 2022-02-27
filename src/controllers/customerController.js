@@ -23,6 +23,7 @@ import db, {
 import {
     paging
 } from '../utils/utils';
+import dayjs from 'dayjs';
 
 const res = new Response();
 
@@ -136,6 +137,21 @@ export default class CustomerController {
                 condition.name = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('"Customer"."name"')), {
                     [Op.iLike]: `%${query.name}%`
                 });
+            }
+            if (query.dateFrom != null && query.dateTo != null) {
+                condition.createdAt = {
+                    [Op.between]: [dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString(), dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()]
+                };
+            } else
+            if (query.dateFrom) {
+                condition.createdAt = {
+                    [Op.gte]: dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString()
+                };
+            } else
+            if (query.dateTo) {
+                condition.createdAt = {
+                    [Op.lte]: dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()
+                };
             }
             let pager = paging(query);
             const result = await Customer.findAndCountAll(Object.assign({

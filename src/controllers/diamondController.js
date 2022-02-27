@@ -138,6 +138,12 @@ export default class DiamondsController {
             const query = ctx.request.query;
             // Query
             const condition = {};
+            if (query.keyword) {
+                query.keyword = removeAccent(query.keyword)
+                condition.productName = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
+                    [Op.iLike]: `%${query.keyword}%`
+                });
+            }
             let order = [];
             if (query.orderBy) {
                 switch (query.orderBy) {

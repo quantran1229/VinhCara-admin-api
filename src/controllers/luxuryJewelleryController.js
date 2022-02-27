@@ -2,12 +2,16 @@ import Logger from '../utils/logger';
 import Response from '../utils/response';
 import Constant from '../constants';
 import {
-    Op
+    Op,
+    Sequelize
 } from 'sequelize';
 import db, {
     LuxuryJewellery,
     Jewellery
 } from '../models';
+import {
+    remove as removeAccent
+} from 'diacritics'
 
 const res = new Response();
 
@@ -271,6 +275,15 @@ export default class LuxuryJewelleryController {
             const condition = {};
             if (query.gender) {
                 condition.gender = query.gender;
+            }
+            if (query.status) {
+                condition.status = query.status;
+            }
+            if (query.keyword) {
+                query.keyword = removeAccent(query.keyword);
+                condition.name = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('name')), {
+                    [Op.iLike]: `%${query.keyword}%`
+                });
             }
             let list = await LuxuryJewellery.findAll({
                 where: condition,
