@@ -129,6 +129,30 @@ export default class ComboController {
             let order = [
                 ['createdAt', 'DESC']
             ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'nameDesc':
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break;
+                    case 'nameAsc':
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break;
+                    case 'createdAtDesc':
+                        order = [
+                            ['createdAt', 'DESC']
+                        ];
+                        break;
+                    case 'createdAtAsc':
+                        order = [
+                            ['createdAt', 'ASC']
+                        ];
+                        break;
+                }
+            }
 
             const pager = paging(query);
             let result = await Combo.getList(condition, pager, order);

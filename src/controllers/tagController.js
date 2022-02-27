@@ -12,6 +12,9 @@ import {
     Op,
     Sequelize
 } from 'sequelize'
+import {
+    paging
+} from '../utils/utils'
 
 const res = new Response();
 
@@ -26,7 +29,28 @@ export default class TagController {
                     [Op.iLike]: `%${query.keyword}%`
                 });
             }
-            const result = await Tag.findAll({where: condition})
+            let order = [
+                ['title', 'ASC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'titleDesc':
+                        order = [
+                            ['title', 'DESC']
+                        ];
+                        break;
+                    case 'titleAsc':
+                        order = [
+                            ['title', 'ASC']
+                        ];
+                        break;
+                }
+            }
+            const pager = paging(query);
+            const result = await Tag.findAndCountAll(Object.assign({
+                where: condition,
+                order: order
+            }, pager))
             if (!result) {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);

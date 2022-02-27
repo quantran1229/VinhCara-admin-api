@@ -153,13 +153,48 @@ export default class CustomerController {
                     [Op.lte]: dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()
                 };
             }
+            let order = [
+                ['createdAt', 'DESC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'nameDesc':
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break;
+                    case 'nameAsc':
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break;
+                    case 'createdAtDesc':
+                        order = [
+                            ['createdAt', 'DESC']
+                        ];
+                        break;
+                    case 'createdAtAsc':
+                        order = [
+                            ['createdAt', 'ASC']
+                        ];
+                        break;
+                    case 'codeDesc':
+                        order = [
+                            ['code', 'DESC']
+                        ];
+                        break;
+                    case 'codeAsc':
+                        order = [
+                            ['code', 'ASC']
+                        ];
+                        break;
+                }
+            }
             let pager = paging(query);
             const result = await Customer.findAndCountAll(Object.assign({
                 where: condition,
                 attributes: ['id', 'code', 'name', 'email', 'phone', 'status', 'createdAt', 'updatedAt'],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
+                order: order,
                 include: [{
                     model: SavedAddress,
                     as: 'defaultAddress',

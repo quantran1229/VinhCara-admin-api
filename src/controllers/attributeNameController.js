@@ -37,8 +37,26 @@ export default class LocationController {
                     [Op.iLike]: `%${query.showName}%`
                 });
             }
+            let order = [
+                ['showName', 'ASC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'nameDesc':
+                        order = [
+                            ['showName', 'DESC']
+                        ];
+                        break;
+                    case 'nameAsc':
+                        order = [
+                            ['showName', 'ASC']
+                        ];
+                        break;
+                }
+            }
             const attributes = await AttributeName.findAndCountAll(Object.assign({
                 where: condition,
+                order: order,
                 attributes: ["showName", "name", "desc", "type", "attributeCode"]
             }, pager));
 
