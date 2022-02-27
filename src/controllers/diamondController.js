@@ -217,9 +217,18 @@ export default class DiamondsController {
                             ['price', 'DESC']
                         ];
                         break;
+                    case "productNameASC":
+                        order = [
+                            ['productName', 'ASC']
+                        ];
+                        break
+                    case "productNameDESC":
+                        order = [
+                            ['productName', 'DESC']
+                        ];
+                        break
                 }
             }
-            order.push(['type', 'ASC'])
 
             if (query.priceFrom != null && query.priceTo != null) {
                 condition.price = {
@@ -315,9 +324,10 @@ export default class DiamondsController {
             const pager = paging(query);
             let result = await Diamond.findAndCountAll(Object.assign({
                 where: condition,
+                order: order,
                 duplicate: false,
                 attributes: [
-                    ['productCode', 'id'], 'productCode', 'mediafiles', 'price', 'shape', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productCode', 'productName', 'mediafiles', 'price', 'shape', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
                 ],
                 include: [{
                     model: DiamondSerial,

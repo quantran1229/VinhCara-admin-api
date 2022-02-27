@@ -11,6 +11,9 @@ import {
 import db, {
     PageSetting
 } from '../models';
+import {
+    paging
+} from '../utils/utils'
 import dayjs from 'dayjs';
 
 const res = new Response();
@@ -49,9 +52,28 @@ export default class PageSettingController {
                     [Op.iLike]: `%${query.keyword}%`
                 });
             }
-            const pages = await PageSetting.findAll({
-                where: condition
-            });
+            let order = [
+                ['name', 'ASC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'nameDesc':
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break;
+                    case 'nameAsc':
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break;
+                }
+            }
+            const pager = paging(query);
+            const pages = await PageSetting.findAndCountAll(Object.assign({
+                where: condition,
+                order: order
+            }, pager));
             // Return list
             res.setSuccess(pages, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);

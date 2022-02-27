@@ -12,6 +12,9 @@ import db, {
 import {
     remove as removeAccent
 } from 'diacritics'
+import {
+    paging
+} from '../utils/utils'
 
 const res = new Response();
 
@@ -285,12 +288,41 @@ export default class LuxuryJewelleryController {
                     [Op.iLike]: `%${query.keyword}%`
                 });
             }
-            let list = await LuxuryJewellery.findAll({
+            let order = [
+                ['name', 'ASC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'nameDesc':
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break;
+                    case 'nameAsc':
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break;
+                    case 'productCodeDesc':
+                        order = [
+                            ['productCode', 'DESC']
+                        ];
+                        break;
+                    case 'productCodeAsc':
+                        order = [
+                            ['productCode', 'ASC']
+                        ];
+                        break;
+                }
+            }
+            const pager = paging(query);
+            let list = await LuxuryJewellery.findAndCountAll(Object.assign({
                 where: condition,
+                order: order,
                 attributes: {
                     exclude: ['blocks']
                 }
-            });
+            }, pager));
             // Return list
             res.setSuccess(list, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);

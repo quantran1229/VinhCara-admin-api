@@ -234,6 +234,21 @@ export default class CollectionController {
                 ['createdAt', 'DESC']
             ];
 
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'nameDesc':
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break;
+                    case 'nameAsc':
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break;
+                }
+            }
+
             const pager = paging(query);
             let result = await Collection.getList(condition, pager, order);
             // Return list
