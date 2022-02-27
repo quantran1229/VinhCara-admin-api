@@ -1,6 +1,9 @@
 import Logger from '../utils/logger';
 import Response from '../utils/response';
 import Constant from '../constants';
+import {
+    remove as removeAccent
+} from 'diacritics'
 
 import {
     Op,
@@ -18,6 +21,7 @@ import {
 import {
     isEqual
 } from 'lodash'
+import dayjs from 'dayjs';
 
 const res = new Response();
 
@@ -98,6 +102,30 @@ export default class ComboController {
             const query = ctx.request.query;
             // Query
             const condition = {};
+            if (query.keyword) {
+                query.keyword = removeAccent(query.keyword);
+                condition.name = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('name')), {
+                    [Op.iLike]: `%${query.keyword}%`
+                });
+            }
+            if (query.status) {
+                condition.status = query.status
+            }
+            if (query.dateFrom != null && query.dateTo != null) {
+                condition.createdAt = {
+                    [Op.between]: [dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString(), dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()]
+                };
+            } else
+            if (query.dateFrom) {
+                condition.createdAt = {
+                    [Op.gte]: dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString()
+                };
+            } else
+            if (query.dateTo) {
+                condition.createdAt = {
+                    [Op.lte]: dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()
+                };
+            }
             let order = [
                 ['createdAt', 'DESC']
             ];
