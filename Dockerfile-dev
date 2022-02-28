@@ -9,13 +9,7 @@ RUN apk add tzdata && \
     date
     
 WORKDIR /app
+
 EXPOSE 3000
-
-COPY ./package.json ./package.json
-COPY /.env.production ./.env
-COPY ./dist ./
-COPY ./run-container.sh ./run-container.sh
-RUN npm install
-
 
 CMD ["/bin/sh","run-container.sh"]

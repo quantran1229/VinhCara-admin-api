@@ -426,6 +426,45 @@ export default class JewelleryController {
                 ['productName', 'ASC']
             ];
 
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'productCodeASC':
+                        order = [
+                            ['productCode', 'ASC']
+                        ];
+                        break;
+                    case 'productCodeDESC':
+                        order = [
+                            ['productCode', 'DESC']
+                        ];
+                        break;
+                    case 'productNameASC':
+                        order = [
+                            ['productName', 'ASC']
+                        ];
+                        break;
+                    case 'productNameDESC':
+                        order = [
+                            ['productName', 'DESC']
+                        ];
+                        break;
+                    case 'priceASC':
+                        order = [
+                            ['totalPrice', 'ASC']
+                        ];
+                        break;
+                    case 'priceDESC':
+                        order = [
+                            ['totalPrice', 'DESC']
+                        ];
+                        break;
+                }
+            }
+
+            if (query.type) {
+                condition.type = query.type
+            }
+
             if (query.category) {
                 if (query.category.includes('-')) {
                     condition.category = Sequelize.literal(`'${removeAccent(query.category.trim().toLowerCase())}' = ANY("productCategorySlug")`)
@@ -455,9 +494,50 @@ export default class JewelleryController {
                     [Op.lte]: parseInt(query.priceTo)
                 };
             }
+
+            let havingCondition = null;
+            if (query.stockStatus != undefined) {
+                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 1' : ' = 0'}`);
+            }
             const pager = paging(query);
-            let result = await Promise.all([Jewellery.count({
-                where: condition
+            let result = await Promise.all([query.stockStatus == undefined ? Jewellery.count({
+                where: condition,
+                include: [{
+                    model: JewellerySerial,
+                    as: 'serialList',
+                    required: false,
+                    where: {
+                        type: JewellerySerial.TYPE.REAL
+                    },
+                    attributes: []
+                }],
+            }) : new Promise(async (res, rej) => {
+                let x = await Promise.all([Jewellery.count({
+                    where: condition,
+                    include: [{
+                        model: JewellerySerial,
+                        as: 'serialList',
+                        required: false,
+                        where: {
+                            type: JewellerySerial.TYPE.REAL
+                        },
+                        attributes: []
+                    }],
+                }), Jewellery.count({
+                    where: condition,
+                    include: [{
+                        model: JewellerySerial,
+                        as: 'serialList',
+                        required: true,
+                        where: {
+                            type: JewellerySerial.TYPE.REAL
+                        },
+                        attributes: []
+                    }],
+                })]);
+                if (query.stockStatus == 1) {
+                    res(x[1]);
+                } else res(x[0] - x[1]);
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
@@ -480,7 +560,9 @@ export default class JewelleryController {
                     }
                 ],
                 subQuery: false,
-                group: ['id', 'newProductInfo.productCode']
+                group: ['id', 'newProductInfo.productCode'],
+                order: order,
+                having: havingCondition
             }, pager))]);
             // Return list
             res.setSuccess({
@@ -497,43 +579,170 @@ export default class JewelleryController {
 
     static getNewJewellery = async (ctx, next) => {
         try {
-            let user = null;
-            let include = [{
-                model: NewJewellery,
-                as: 'newProductInfo',
-                required: true,
-                attributes: ['order']
-            }]
-            if (ctx.state.user) {
-                user = ctx.state.user;
-                include.push({
-                    model: WishlistLog,
-                    required: false,
-                    where: {
-                        customerId: user.id,
-                        isCurrent: true,
-                        status: WishlistLog.STATUS.LIKE,
-                    },
-                    as: 'wishlistInfo',
-                    attributes: [
-                        ['status', 'isLiked']
-                    ]
-                })
+            const query = ctx.request.query;
+            // Query
+            const condition = {};
+            let order = [
+                [{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                }, 'order', 'ASC']
+            ];
+
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'productCodeASC':
+                        order = [
+                            ['productCode', 'ASC'],
+                        ];
+                        break;
+                    case 'productCodeDESC':
+                        order = [
+                            ['productCode', 'DESC']
+                        ];
+                        break;
+                    case 'productNameASC':
+                        order = [
+                            ['productName', 'ASC']
+                        ];
+                        break;
+                    case 'productNameDESC':
+                        order = [
+                            ['productName', 'DESC']
+                        ];
+                        break;
+                    case 'priceASC':
+                        order = [
+                            ['totalPrice', 'ASC']
+                        ];
+                        break;
+                    case 'priceDESC':
+                        order = [
+                            ['totalPrice', 'DESC']
+                        ];
+                        break;
+                }
+                order.push([{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                }, 'order', 'ASC']);
             }
-            let list = await Jewellery.findAll({
-                include: include,
-                attributes: [
-                    ['productCode', 'id'], 'productCode', 'type', 'mediafiles', 'productName', 'mainCategory', 'productCategory', 'price'
-                ],
-                order: [
-                    [{
+
+            if (query.type) {
+                condition.type = query.type
+            }
+
+            if (query.category) {
+                if (query.category.includes('-')) {
+                    condition.category = Sequelize.literal(`'${removeAccent(query.category.trim().toLowerCase())}' = ANY("productCategorySlug")`)
+                } else
+                    condition.category = Sequelize.literal(`'${query.category}' = ANY("productCategory")`);
+            }
+
+            if (query.productCode) {
+                const list = query.productCode.split(',');
+                condition.productCode = {
+                    [Op.in]: list
+                };
+            }
+
+            if (query.priceFrom != null && query.priceTo != null) {
+                condition.price = {
+                    [Op.between]: [parseInt(query.priceFrom) || 0, parseInt(query.priceTo) || 0]
+                };
+            } else
+            if (query.priceFrom) {
+                condition.price = {
+                    [Op.gte]: parseInt(query.priceFrom)
+                };
+            } else
+            if (query.priceTo) {
+                condition.price = {
+                    [Op.lte]: parseInt(query.priceTo)
+                };
+            }
+
+            let havingCondition = null;
+            if (query.stockStatus != undefined) {
+                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 1' : ' = 0'}`);
+            }
+            const pager = paging(query);
+            let result = await Promise.all([query.stockStatus == undefined ? Jewellery.count({
+                where: condition,
+                include: [{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                    required: true
+                }],
+            }) : new Promise(async (res, rej) => {
+                let x = await Promise.all([Jewellery.count({
+                    where: condition,
+                    include: [{
                         model: NewJewellery,
-                        as: 'newProductInfo'
-                    }, 'order', 'ASC']
-                ]
-            });
+                        as: 'newProductInfo',
+                        required: true,
+                        attributes: ['order']
+                    }, {
+                        model: JewellerySerial,
+                        as: 'serialList',
+                        required: false,
+                        where: {
+                            type: JewellerySerial.TYPE.REAL
+                        },
+                        attributes: []
+                    }],
+                }), Jewellery.count({
+                    where: condition,
+                    include: [{
+                        model: JewellerySerial,
+                        as: 'serialList',
+                        required: true,
+                        where: {
+                            type: JewellerySerial.TYPE.REAL
+                        },
+                        attributes: []
+                    }, {
+                        model: NewJewellery,
+                        as: 'newProductInfo',
+                        required: true,
+                        attributes: ['order']
+                    }],
+                })]);
+                if (query.stockStatus == 1) {
+                    res(x[1]);
+                } else res(x[0] - x[1]);
+            }), Jewellery.findAll(Object.assign({
+                where: condition,
+                attributes: [
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                ],
+                duplicate: false,
+                include: [{
+                        model: NewJewellery,
+                        as: 'newProductInfo',
+                        required: true,
+                        attributes: ['order']
+                    },
+                    {
+                        model: JewellerySerial,
+                        as: 'serialList',
+                        required: false,
+                        where: {
+                            type: JewellerySerial.TYPE.REAL
+                        },
+                        attributes: []
+                    }
+                ],
+                subQuery: false,
+                group: ['id', 'newProductInfo.productCode'],
+                order: order,
+                having: havingCondition
+            }, pager))]);
             // Return list
-            res.setSuccess(list, Constant.instance.HTTP_CODE.Success);
+            res.setSuccess({
+                count: result[0],
+                list: result[1]
+            }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('getNewJewellery ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
