@@ -246,9 +246,7 @@ export default class OrderController {
                     as: 'giftProvidenceInfo',
                     attributes: ['id', 'type', 'name']
                 }],
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                order: order
             }, pager));
             // Return list
             res.setSuccess({

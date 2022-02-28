@@ -117,5 +117,7 @@ router.post('/new-jewellery', jwtValidate, validate({
     }
 }), JewelleryController.postJewelleryNewOrder);
 
+router.get('/new-jewellery', jwtValidate, JewelleryController.getNewJewellery);
+
 router.delete('/new-jewellery/:id', jwtValidate, JewelleryController.deleteNewProductOrder);
 export default router;
