@@ -322,7 +322,9 @@ export default class DiamondsController {
             }
 
             const pager = paging(query);
-            let result = await Diamond.findAndCountAll(Object.assign({
+            let result = await Promise.all([Diamond.count({
+                where: condition,
+            }),Diamond.findAll(Object.assign({
                 where: condition,
                 order: order,
                 duplicate: false,
@@ -340,11 +342,11 @@ export default class DiamondsController {
                 }],
                 subQuery: false,
                 group: ['productCode', 'serialList.serial']
-            }, pager));
+            }, pager))]);
             // Return list
             res.setSuccess({
-                list: result.rows,
-                count: result.count
+                list: result[1],
+                count: result[0]
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
