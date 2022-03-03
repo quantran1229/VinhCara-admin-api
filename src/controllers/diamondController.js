@@ -536,7 +536,7 @@ export default class DiamondsController {
                     model: Diamond,
                     as: 'generalInfo',
                     attributes: [
-                        ['productCode', 'id'], 'productCode', 'mediafiles', 'price', 'shape'
+                        ['productCode', 'id'], 'productCode', 'mediafiles', 'price', 'shape', 'productName'
                     ]
                 }, {
                     model: Stock,
