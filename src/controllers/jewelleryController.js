@@ -132,7 +132,7 @@ export default class JewelleryController {
             if (desc && desc != jewellery.desc) {
                 updateInfo.desc = desc;
             }
-            if (isShowOnWeb && isShowOnWeb != jewellery.isShowOnWeb) {
+            if (isShowOnWeb != undefined && isShowOnWeb != jewellery.isShowOnWeb) {
                 updateInfo.isShowOnWeb = isShowOnWeb;
             }
             if (shape && shape != jewellery.shape) {
