@@ -507,15 +507,6 @@ export default class JewelleryController {
             const pager = paging(query);
             let result = await Promise.all([query.stockStatus == undefined ? Jewellery.count({
                 where: condition,
-                include: [{
-                    model: JewellerySerial,
-                    as: 'serialList',
-                    required: false,
-                    where: {
-                        type: JewellerySerial.TYPE.REAL
-                    },
-                    attributes: []
-                }],
             }) : new Promise(async (res, rej) => {
                 let x = await Promise.all([Jewellery.count({
                     where: condition,
@@ -568,11 +559,25 @@ export default class JewelleryController {
                 group: ['id', 'newProductInfo.productCode'],
                 order: order,
                 having: havingCondition
-            }, pager))]);
+            }, pager)), Jewellery.count({
+            }),  Jewellery.count({
+                where: {
+                    isShowOnWeb: true
+                }
+            }), Jewellery.count({
+                where: {
+                    isShowOnWeb: false
+                }
+            })]);
             // Return list
             res.setSuccess({
                 count: result[0],
-                list: result[1]
+                list: result[1],
+                extraCount:{
+                    totalCount: result[2],
+                    totalShow: result[3],
+                    totalHide: result[4]
+                }
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
