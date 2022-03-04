@@ -495,6 +495,11 @@ export default class JewelleryController {
                 };
             }
 
+            if (query.isShowOnWeb != undefined)
+            {
+                condition.isShowOnWeb = query.isShowOnWeb == "true" ? true : false
+            }
+
             let havingCondition = null;
             if (query.stockStatus != undefined) {
                 havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 1' : ' = 0'}`);
