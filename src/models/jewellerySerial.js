@@ -28,6 +28,11 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'productOdooId',
         as: 'generalInfo'
       });
+      JewellerySerial.belongsTo(models.Stock, {
+        foreignKey: 'stockId',
+        targetKey: 'id',
+        as: 'stockInfo'
+      });
     }
   };
   JewellerySerial.init({

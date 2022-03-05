@@ -38,7 +38,8 @@ module.exports = (sequelize, DataTypes) => {
     meta: DataTypes.JSONB,
     price: DataTypes.BIGINT,
     shape: DataTypes.STRING,
-    size: DataTypes.DOUBLE
+    size: DataTypes.DOUBLE,
+    SEOInfo: DataTypes.JSONB
   }, {
     sequelize,
     modelName: 'Diamond',

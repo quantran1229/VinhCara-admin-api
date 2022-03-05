@@ -65,7 +65,7 @@ export default class SavedAddressController {
             // Return info
             res.setSuccess({
                 count: user.addresses.length,
-                data: user.addresses
+                list: user.addresses
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
@@ -213,7 +213,6 @@ export default class SavedAddressController {
                     cityId,
                     districtId,
                     providenceId,
-                    cityId,
                     recieverName,
                     phone,
                     type,

@@ -61,13 +61,38 @@ export default class UserTypeController {
                     [Op.iLike]: `%${query.name}%`
                 });
             }
+            let order = [
+                ['id', 'ASC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'nameDesc':
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break;
+                    case 'nameAsc':
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break;
+                    case 'idDesc':
+                        order = [
+                            ['id', 'DESC']
+                        ];
+                        break;
+                    case 'idAsc':
+                        order = [
+                            ['id', 'ASC']
+                        ];
+                        break;
+                }
+            }
             let pager = paging(query);
             const result = await UserType.findAndCountAll(Object.assign({
                 where: condition,
                 attributes: ["id", "name", "createdBy", "createdAt"],
-                order: [
-                    ['id', 'ASC']
-                ],
+                order: order,
                 include: [{
                     model: User,
                     as: "createdByInfo",
@@ -78,7 +103,7 @@ export default class UserTypeController {
             // Return list
             res.setSuccess({
                 count: result.count,
-                data: result.rows
+                list: result.rows
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {

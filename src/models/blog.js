@@ -6,9 +6,9 @@ const {
 module.exports = (sequelize, DataTypes) => {
     class Blog extends Model {
         static STATUS = {
-            ACTIVE: 1, //publish
-            INACTIVE: -1, //Nháp
-            STOP: -2 // Dừng
+            ACTIVE: 2, //publish
+            INACTIVE: 1, //Nháp
+            STOP: -1 // Dừng
         }
         static associate(models) {
             // define association here
@@ -22,7 +22,11 @@ module.exports = (sequelize, DataTypes) => {
                 sourceKey: 'id',
                 as: 'listblogToTags'
             })
-            //Blog.belongsToMany(models.Tag, { through: models.BlogToTag, as: 'tags' })
+            Blog.belongsToMany(models.Tag, {
+                through: models.BlogToTag,
+                as: 'tags',
+                foreignKey: 'blogId',
+            });
         }
     };
     Blog.init({
@@ -40,12 +44,7 @@ module.exports = (sequelize, DataTypes) => {
         sequelize,
         tableName: 'blogs',
         modelName: 'Blog',
-        timestamps: false,
-        defaultScope: {
-            where: {
-                status: Blog.STATUS.ACTIVE
-            }
-        }
+        timestamps: true,
     });
     return Blog
 }

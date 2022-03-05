@@ -2,8 +2,12 @@
 const {
     Model
 } = require('sequelize');
-import {Tag} from './tag'
-import {Blog} from './blog'
+import {
+    Tag
+} from './tag'
+import {
+    Blog
+} from './blog'
 module.exports = (sequelize, DataTypes) => {
     class BlogToTag extends Model {
         static associate(models) {
@@ -21,8 +25,14 @@ module.exports = (sequelize, DataTypes) => {
         }
     };
     BlogToTag.init({
-        blogId: DataTypes.INTEGER,
-        tagId: DataTypes.INTEGER,
+        blogId: {
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+        },
+        tagId: {
+            type: DataTypes.INTEGER,
+            primaryKey: true,
+        }
     }, {
         sequelize,
         tableName: 'blogToTags',

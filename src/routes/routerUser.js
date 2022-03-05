@@ -17,7 +17,7 @@ router.post('/users', validate({
     body: {
         phone: {
             type: 'string',
-            required: true,
+            required: false,
             format: /^\d+$/
         },
         email: {
@@ -93,4 +93,72 @@ router.put('/password', jwtValidate, validate({
         newPassword: 'password'
     }
 }), UserController.putUpdatePassword);
+
+// User for admin to check
+
+router.get('/users', jwtValidate, UserController.getUsersList);
+
+router.get('/users/:id', jwtValidate, UserController.getUserInfo);
+
+router.put('/users/:id', validate({
+    body: {
+        phone: {
+            type: 'string',
+            required: false,
+            format: /^\d+$/
+        },
+        email: {
+            type: 'email',
+            required: false
+        },
+        name: {
+            type: 'string',
+            required: false
+        },
+        avatar: {
+            type: 'string',
+            required: false
+        },
+        status: {
+            type: 'enum',
+            required: false,
+            values: Object.values(User.STATUS)
+        },
+        password: {
+            type: 'password',
+            required: false
+        }
+    }
+}), jwtValidate, UserController.putUpdateUserInfo);
+
+router.put('/users/:id', validate({
+    body: {
+        phone: {
+            type: 'string',
+            required: false,
+            format: /^\d+$/
+        },
+        email: {
+            type: 'email',
+            required: false
+        },
+        name: {
+            type: 'string',
+            required: false
+        },
+        avatar: {
+            type: 'string',
+            required: false
+        },
+        status: {
+            type: 'enum',
+            required: false,
+            values: Object.values(User.STATUS)
+        },
+        password: {
+            type: 'password',
+            required: false
+        }
+    }
+}), jwtValidate, UserController.putUpdateUserInfo);
 export default router;

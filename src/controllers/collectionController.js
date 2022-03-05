@@ -13,6 +13,13 @@ import {
 import {
     paging
 } from '../utils/utils'
+import {
+    isEqual
+} from 'lodash'
+import {
+    remove as removeAccent
+} from 'diacritics'
+import dayjs from 'dayjs';
 
 const res = new Response();
 
@@ -30,8 +37,8 @@ export default class CollectionController {
             res.setSuccess(collection, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getCollectionInfo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
-            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError,null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            Logger.error('getCollectionInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
     }
@@ -39,7 +46,7 @@ export default class CollectionController {
     static getCurrentCollection = async (ctx, next) => {
         try {
             let collection = await Collection.findOne({
-                attributes:{
+                attributes: {
                     exclude: ['productCode']
                 }
             });
@@ -51,8 +58,8 @@ export default class CollectionController {
             res.setSuccess(collection, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getCurrentCollection ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
-            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError,null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            Logger.error('getCurrentCollection ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
     }
@@ -60,12 +67,11 @@ export default class CollectionController {
     static getCurrentCollectionJewelleryList = async (ctx, next) => {
         try {
             let user = null;
-            if (ctx.state.user)
-            {
+            if (ctx.state.user) {
                 user = ctx.state.user;
             }
             let collection = await Collection.findOne({
-                attributes:['productCode']
+                attributes: ['productCode']
             });
 
             if (!collection) {
@@ -154,8 +160,8 @@ export default class CollectionController {
             res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getCurrentCollectionJewelleryList ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
-            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError,null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            Logger.error('getCurrentCollectionJewelleryList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
     }
@@ -200,9 +206,48 @@ export default class CollectionController {
             const query = ctx.request.query;
             // Query
             const condition = {};
+            if (query.keyword) {
+                query.keyword = removeAccent(query.keyword);
+                condition.name = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('name')), {
+                    [Op.iLike]: `%${query.keyword}%`
+                });
+            }
+            if (query.status) {
+                condition.status = query.status
+            }
+            if (query.dateFrom != null && query.dateTo != null) {
+                condition.createdAt = {
+                    [Op.between]: [dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString(), dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()]
+                };
+            } else
+            if (query.dateFrom) {
+                condition.createdAt = {
+                    [Op.gte]: dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString()
+                };
+            } else
+            if (query.dateTo) {
+                condition.createdAt = {
+                    [Op.lte]: dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()
+                };
+            }
             let order = [
                 ['createdAt', 'DESC']
             ];
+
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'nameDesc':
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break;
+                    case 'nameAsc':
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break;
+                }
+            }
 
             const pager = paging(query);
             let result = await Collection.getList(condition, pager, order);
@@ -210,8 +255,8 @@ export default class CollectionController {
             res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getCollectionList ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
-            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError,null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            Logger.error('getCollectionList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
     }
@@ -220,12 +265,11 @@ export default class CollectionController {
         try {
             // get current user
             let user = null;
-            if (ctx.state.user)
-            {
+            if (ctx.state.user) {
                 user = ctx.state.user;
             }
             const id = ctx.request.params.id;
-            let collection = await Collection.getInfo(id,true);
+            let collection = await Collection.getInfo(id, true);
 
             if (!collection) {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
@@ -314,8 +358,229 @@ export default class CollectionController {
             res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('getCollectionJewelleryList ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
-            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError,null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            Logger.error('getCollectionJewelleryList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static postCreateCollection = async (ctx, next) => {
+        try {
+            const {
+                link,
+                mediafiles,
+                meta,
+                name,
+                productCode,
+                SEOInfo,
+                status,
+                bannerInfo
+            } = ctx.request.body;
+            let collection = await Collection.create({
+                link,
+                mediafiles,
+                meta,
+                name,
+                productCode,
+                SEOInfo,
+                status,
+                bannerInfo,
+                createdBy: ctx.state.user.id,
+            })
+            res.setSuccess(collection, Constant.instance.HTTP_CODE.Created);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postCreateCollection ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static putUpdateCollection = async (ctx, next) => {
+        try {
+            const {
+                id
+            } = ctx.request.params
+            const {
+                link,
+                mediafiles,
+                meta,
+                name,
+                productCode,
+                status,
+                bannerInfo
+            } = ctx.request.body;
+            let updateInfo = {};
+            let respCollection = await Collection.findOne({
+                where: {
+                    id: id
+                }
+            })
+            if (!respCollection) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            if (link && link != respCollection.link) {
+                updateInfo.link = link
+            }
+            if (name && name != respCollection.name) {
+                updateInfo.name = name
+            }
+            if (status && status != respCollection.status) {
+                updateInfo.status = status
+            }
+            if (mediafiles && !isEqual(mediafiles, respCollection.mediafiles)) {
+                updateInfo.mediafiles = mediafiles
+            }
+            if (meta && !isEqual(meta, respCollection.meta)) {
+                updateInfo.meta = meta
+            }
+            if (productCode && !isEqual(productCode, respCollection.productCode)) {
+                updateInfo.productCode = productCode
+            }
+            if (bannerInfo && !isEqual(bannerInfo, respCollection.bannerInfo)) {
+                updateInfo.bannerInfo = bannerInfo
+            }
+            respCollection = await respCollection.update(updateInfo);
+            // Return info
+            res.setSuccess(respCollection, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putUpdateCollection ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static putUpdateSeoInfoCollection = async (ctx, next) => {
+        try {
+            const { id } = ctx.request.params
+            const {
+                SEOInfo,
+            } = ctx.request.body;
+            let updateInfo = {};
+            let respCollection = await Collection.findOne({
+                where: {
+                    id: id
+                }
+            })
+            if (!respCollection) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            if (SEOInfo && !isEqual(SEOInfo, respCollection.SEOInfo)) {
+                updateInfo.SEOInfo = SEOInfo
+            }
+            respCollection = await respCollection.update(updateInfo);
+            // Return info
+            res.setSuccess(respCollection, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putUpdateSeoInfoCollection ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static deleteCollection = async (ctx, next) => {
+        try {
+            const {
+                id
+            } = ctx.request.params
+            let respCollection = await Collection.findOne({
+                where: {
+                    id: id
+                }
+            })
+            if (!respCollection) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            await Collection.destroy({
+                where: {
+                    id: id
+                }
+            })
+            res.setSuccess({
+                deleted: true
+            }, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('deleteCollection ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static deleteJewelleryInCollection = async (ctx, next) => {
+        try {
+            const {
+                id,
+                jewelleryId
+            } = ctx.request.params
+            let respCollection = await Collection.findOne({
+                where: {
+                    id: id
+                }
+            })
+            if (!respCollection) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            let productCode = [...new Set(respCollection.productCode)];
+            let index = productCode.findIndex(item => item === jewelleryId)
+            if (index !== -1) {
+                productCode.splice(index, 1)
+            }
+            respCollection = await respCollection.update({
+                productCode: [... new Set(productCode)]
+            });
+            // Return info
+            res.setSuccess(respCollection, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('deleteJewelleryInCollection ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static postAddJewelleryInCollection = async (ctx, next) => {
+        try {
+            const {
+                id,
+                jewelleryId
+            } = ctx.request.params
+            let respCollection = await Collection.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (!respCollection) {
+                res.setError("Collection Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            };
+            let jewellery = await Jewellery.findOne({
+                where: {
+                    productCode: jewelleryId
+                }
+            });
+            if (!jewellery) {
+                res.setError("Jewellery Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            };
+            let updateInfo = {}
+            let productCode = [...new Set(respCollection.productCode)];
+            productCode.push(jewellery.productCode);
+            updateInfo.productCode = [...new Set(productCode)];
+
+            respCollection = await respCollection.update(updateInfo);
+            // Return info
+            res.setSuccess(respCollection, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('postJewelleryInCollection ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
     }

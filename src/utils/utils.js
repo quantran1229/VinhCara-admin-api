@@ -2,6 +2,7 @@ import glob from 'glob';
 import path from 'path';
 import fs from 'fs';
 import Constant from '../constants';
+import ASCIIFolder from './ASCIIFolding'
 // Write all util functions here
 
 // Paging function to set default list
@@ -78,4 +79,15 @@ export function getPublicKey()
 export function getRandomString(length)
 {
     return Math.random().toString(36).substring(2, 2 + length);
+}
+export function buildSlug (string, separator = '-') {
+    let tmp = string
+    tmp = (tmp || '').toLowerCase().trim()
+    tmp = ASCIIFolder.fold(tmp)
+    tmp = tmp.replace(/\s/g, `${separator}`)
+    tmp = tmp.replace(new RegExp(`[^0-9a-zA-Z${separator}.]+`, 'g'), '')
+    tmp = tmp.replace(new RegExp(`${separator}{1,}`, 'g'), `${separator}`)
+    tmp = tmp.replace(new RegExp(`${separator}{1,}$`, 'g'), '')
+    tmp = tmp.replace(new RegExp(`^${separator}{1,}`, 'g'), '')
+    return tmp.replace(/\.+/gm, separator)
 }

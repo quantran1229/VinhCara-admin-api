@@ -15,7 +15,6 @@ import db, {
 const res = new Response();
 
 export default class PageController {
-    // Check health, return memory usage + uptime + mediafile disk size
     static getPageInfo = async (ctx, next) => {
         try {
             const id = ctx.request.params.id;

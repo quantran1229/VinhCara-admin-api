@@ -73,6 +73,15 @@ module.exports = (sequelize, DataTypes) => {
           isDefault: true,
         }
       });
+      Customer.hasMany(models.WishlistLog, {
+        foreignKey: 'customerId',
+        sourceKey: 'id',
+        as: 'wishlist',
+        scope: {
+          status: models.WishlistLog.STATUS.LIKE,
+          isCurrent: true
+        }
+      })
     }
   };
   Customer.init({

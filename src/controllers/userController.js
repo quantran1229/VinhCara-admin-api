@@ -2,6 +2,7 @@ import Logger from '../utils/logger';
 import Response from '../utils/response';
 import Constant from '../constants';
 import bcrypt from 'bcrypt';
+import dayjs from 'dayjs';
 import {
     sign
 } from 'jsonwebtoken';
@@ -18,6 +19,9 @@ import {
     getPrivateKey,
     getRandomString
 } from '../utils/utils';
+import {
+    remove as removeAccent
+} from 'diacritics';
 import CryptoJS, {
     AES
 } from 'crypto-js';
@@ -63,11 +67,11 @@ export default class UserController {
                         email: email
                     }
                 }),
-                User.findOne({
+                phone ? User.findOne({
                     where: {
                         phone: phone
                     }
-                })
+                }) : null
             ]);
             // Validate info from database
             if (checkDuplicate[0] || checkDuplicate[1]) {
@@ -334,6 +338,235 @@ export default class UserController {
 
         } catch (e) {
             Logger.error('forgetPassword ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static getUsersList = async (ctx, next) => {
+        try {
+            let {
+                phone,
+                name,
+                email,
+                userType,
+                keyword,
+                status,
+                createdFrom,
+                createdTo,
+                orderBy
+            } = ctx.request.query;
+            let condition = {};
+            if (keyword) {
+                keyword = removeAccent(keyword).toLowerCase();
+                condition = {
+                    [Op.or]: [{
+                        phone: {
+                            [Op.iLike]: `%${keyword}%`
+                        }
+                    }, {
+                        name: {
+                            [Op.iLike]: `%${keyword}%`
+                        }
+                    }, {
+                        email: {
+                            [Op.iLike]: `%${keyword}%`
+                        }
+                    }]
+                }
+            }
+            if (phone) {
+                condition.phone = {
+                    [Op.like]: `%${phone}%`
+                }
+            }
+            if (email) {
+                condition.email = {
+                    [Op.iLike]: `%${email}%`
+                }
+            }
+            if (status) {
+                condition.status = status
+            }
+            if (userType) {
+                condition.userType = userType
+            }
+            if (name) {
+                name = removeAccent(name);
+                condition.name = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.literal('"User"."name"')), {
+                    [Op.iLike]: `%${name}%`
+                });
+            }
+            if (createdFrom && createdTo) {
+                condition.createdAt = {
+                    [Op.between]: [dayjs(createdFrom, 'YYYY-MM-DD').startOf('day').toDate(), dayjs(createdTo, 'YYYY-MM-DD').endOf('day').toDate()]
+                }
+            } else if (createdTo) {
+                condition.createdAt = {
+                    [Op.lte]: dayjs(createdTo).endOf('day').toDate()
+                }
+            } else if (createdFrom) {
+                condition.createdAt = {
+                    [Op.gte]: dayjs(createdFrom).startOf('day').toDate()
+                }
+            }
+            let order = [
+                ['createdAt', 'DESC']
+            ];
+            if (orderBy) {
+                switch (orderBy) {
+                    case "newest":
+                        order = [
+                            ['createdAt', 'DESC']
+                        ];
+                        break
+                    case "nameASC":
+                        order = [
+                            ['name', 'ASC']
+                        ];
+                        break
+                    case "nameDESC":
+                        order = [
+                            ['name', 'DESC']
+                        ];
+                        break
+                }
+            }
+            let pager = paging(ctx.request.query);
+            let result = await User.findAndCountAll(Object.assign({
+                where: condition,
+                attributes: ['id', 'name', 'phone', 'email', 'createdAt'],
+                include: [{
+                    model: UserType,
+                    as: 'typeInfo',
+                    attributes: ['id', 'name']
+                }],
+                order: order
+            }, pager));
+            res.setSuccess({
+                count: result.count,
+                list: result.rows
+            }, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('getList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static getUserInfo = async (ctx, next) => {
+        try {
+            let id = ctx.request.params.id;
+            let user = await User.findOne({
+                where: {
+                    id: id
+                },
+                attributes: {
+                    exclude: ['meta', 'password', 'status']
+                },
+                include: [{
+                    model: UserType,
+                    as: 'typeInfo',
+                    attributes: ['id', 'name']
+                }]
+            });
+            if (!user) {
+                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
+                return res.send(ctx);
+            }
+            res.setSuccess(user, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('getInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static putUpdateUserInfo = async (ctx, next) => {
+        try {
+            const {
+                name,
+                email,
+                phone,
+                avatar,
+                status,
+                password
+            } = ctx.request.body;
+            // Get current user id from token
+            let id = ctx.request.params.id;
+            let user = await User.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (!user) {
+                res.setError("Unauthorized", Constant.instance.HTTP_CODE.Unauthorized);
+                return res.send(ctx);
+            }
+            let updateInfo = {};
+            if (password) {
+                const saltRounds = Constant.instance.DEFAULT_SALT_ROUND;
+                updateInfo.password = bcrypt.hashSync(password, saltRounds);
+            }
+
+            if (status || status != user.status)
+                updateInfo.status = status;
+
+            if ((email && email != user.email) || (phone && phone != user.phone)) {
+                let checkDuplicate = await Promise.all([
+                    (email && email != user.email) ?
+                    User.findOne({
+                        where: {
+                            email: email,
+                            id: {
+                                [Op.not]: id
+                            }
+                        }
+                    }) : null,
+                    (phone && phone != user.phone) ?
+                    User.findOne({
+                        where: {
+                            phone: phone,
+                            id: {
+                                [Op.not]: id
+                            }
+                        }
+                    }) : null
+                ]);
+                // Validate info from database
+                if (checkDuplicate[0] || checkDuplicate[1]) {
+                    if (checkDuplicate[0]) {
+                        res.setError(`Duplicated`, Constant.instance.HTTP_CODE.Conflict, null, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+                        return res.send(ctx);
+                    }
+                    res.setError(`Duplicated`, Constant.instance.HTTP_CODE.Conflict, null, Constant.instance.ERROR_CODE.User_DUPLICATE_PHONE);
+                    return res.send(ctx);
+                }
+                if (email && email != user.email) {
+                    updateInfo.email = email;
+                }
+                if (phone && phone != user.phone) {
+                    updateInfo.phone = phone;
+                }
+            }
+            // Save to database
+            if (name && name != user.name) {
+                updateInfo.name = name;
+            }
+
+            if (avatar && avatar != user.avatar) {
+                updateInfo.avatar = avatar;
+            }
+            // update
+            user = await user.update(updateInfo);
+            // Remove password
+            user.dataValues.password = null;
+            res.setSuccess(user, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('putUpdateUserInfo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
