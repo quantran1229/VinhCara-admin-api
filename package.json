@@ -1,5 +1,5 @@
 {
-  "name": "vinhcara admin",
+  "name": "vinhcara_admin_api",
   "version": "1.0.0",
   "description": "BE nodejs template for API",
   "main": "index.js",
