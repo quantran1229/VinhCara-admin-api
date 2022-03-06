@@ -23,7 +23,8 @@ import db, {
     ReturnForm,
     Location,
     JewellerySerial,
-    DiamondSerial
+    DiamondSerial,
+    StoreContact
 } from '../models';
 
 const res = new Response();
@@ -88,7 +89,11 @@ export default class OrderController {
                     }, {
                         model: ReturnForm,
                         as: 'returnForms'
-                    }
+                    }, {
+                        model: StoreContact,
+                        as: 'storeInfo',
+                        required: false
+                    },
                 ],
             });
             if (!order) {
