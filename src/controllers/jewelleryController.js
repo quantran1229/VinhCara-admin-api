@@ -421,7 +421,7 @@ export default class JewelleryController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             let order = [
                 ['productName', 'ASC']
             ];
@@ -458,6 +458,45 @@ export default class JewelleryController {
                             ['totalPrice', 'DESC']
                         ];
                         break;
+                }
+            }
+
+            if (query.keyword) {
+                let keyword = removeAccent(query.keyword).toLowerCase();
+                condition = {
+                    ...condition,
+                    [Op.or]: [
+                        {
+                            productCode: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            productName: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            mainCategory: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            gemstone: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            shape: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            goldProperty: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }
+                    ]
                 }
             }
 
