@@ -630,7 +630,7 @@ export default class JewelleryController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             let order = [
                 [{
                     model: NewJewellery,
@@ -675,6 +675,45 @@ export default class JewelleryController {
                     model: NewJewellery,
                     as: 'newProductInfo',
                 }, 'order', 'ASC']);
+            }
+
+            if (query.keyword) {
+                let keyword = removeAccent(query.keyword).toLowerCase();
+                condition = {
+                    ...condition,
+                    [Op.or]: [
+                        {
+                            productCode: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            productName: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            mainCategory: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            gemstone: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            shape: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            goldProperty: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }
+                    ]
+                }
             }
 
             if (query.type) {
