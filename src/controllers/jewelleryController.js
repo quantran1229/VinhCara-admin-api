@@ -1000,6 +1000,19 @@ export default class JewelleryController {
             }
             transaction = await db.sequelize.transaction();
             for (let i of list) {
+                let y = await NewJewellery.findOne({
+                    where:{
+                        productCode: i.productCode
+                    }
+                });
+                if (y){
+                    await y.update({
+                        order: i.order
+                    },{
+                        transaction
+                    });
+                    continue;
+                }
                 let x = await NewJewellery.findOne({
                     where: {
                         order: i.order
