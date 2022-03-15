@@ -541,7 +541,7 @@ export default class JewelleryController {
 
             let havingCondition = null;
             if (query.stockStatus != undefined) {
-                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 1' : ' = 0'}`);
+                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 0' : ' = 0'}`);
             }
             const pager = paging(query);
             let result = await Promise.all([query.stockStatus == undefined ? Jewellery.count({
