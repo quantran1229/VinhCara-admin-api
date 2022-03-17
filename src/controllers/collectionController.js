@@ -387,6 +387,16 @@ export default class CollectionController {
                 bannerInfo,
                 createdBy: ctx.state.user.id,
             })
+            let checkCollection = await Collection.findOne({
+                where:{
+                    link : link
+                }
+            });
+            if (checkCollection)
+            {
+                res.setError("Conflict link", Constant.instance.HTTP_CODE.Conflict);
+                return res.send(ctx);
+            }
             res.setSuccess(collection, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);
         } catch (e) {
