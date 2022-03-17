@@ -29,11 +29,6 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Policy',
     tableName: 'policies',
     timestamps: false,
-    defaultScope: {
-      where: {
-        status: Policy.STATUS.ACTIVE
-      }
-    }
   });
   return Policy;
 };

@@ -40,11 +40,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'LuxuryJewellery',
     tableName: 'luxuryJewelleries',
-    defaultScope: {
-      where: {
-        status: LuxuryJewellery.STATUS.ACTIVE
-      }
-    }
   });
   return LuxuryJewellery;
 };

@@ -42,11 +42,6 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Menu',
     tableName: 'menu',
     timestamps: false,
-    defaultScope: {
-      where: {
-        status: Menu.STATUS.ACTIVE
-      }
-    }
   });
   return Menu;
 };
