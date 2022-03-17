@@ -68,11 +68,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Collection',
     tableName: 'collections',
-    defaultScope: {
-      where: {
-        status: collections.STATUS.ACTIVE
-      }
-    }
   });
   return collections;
 };

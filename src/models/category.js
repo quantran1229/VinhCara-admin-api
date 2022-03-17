@@ -46,11 +46,6 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Category',
     tableName: 'categories',
     timestamps: false,
-    defaultScope: {
-      where: {
-        status: Category.STATUS.ACTIVE
-      }
-    }
   });
   return Category;
 };
