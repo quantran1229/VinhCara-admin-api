@@ -148,6 +148,16 @@ export default class ComboController {
                 bannerInfo,
                 desc
             } = ctx.request.body;
+            let checkCombo = await Combo.findOne({
+                where:{
+                    link : link
+                }
+            });
+            if (checkCombo)
+            {
+                res.setError("Conflict link", Constant.instance.HTTP_CODE.Conflict);
+                return res.send(ctx);
+            }
             let combo = await Combo.create({
                 link,
                 mediafiles,
