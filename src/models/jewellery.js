@@ -137,7 +137,8 @@ module.exports = (sequelize, DataTypes) => {
     type: DataTypes.INTEGER,
     shape: DataTypes.STRING,
     isShowOnWeb: DataTypes.BOOLEAN,
-    desc: DataTypes.TEXT
+    desc: DataTypes.TEXT,
+    isHiddenPrice: DataTypes.BOOLEAN,
   }, {
     sequelize,
     modelName: 'Jewellery',
