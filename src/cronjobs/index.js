@@ -77,7 +77,7 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
             isShowOnWeb: true,
             isLuxury: false
         },
-        attributes: ['productCode', 'price', 'type', 'isHiddenField'],
+        attributes: ['productCode', 'price', 'type', 'isHiddenPrice'],
         include: [{
             model: JewellerySerial,
             as: 'serialList',
