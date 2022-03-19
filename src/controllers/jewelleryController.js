@@ -93,7 +93,8 @@ export default class JewelleryController {
                 keywords,
                 desc,
                 isShowOnWeb,
-                shape
+                shape,
+                isHiddenField
             } = ctx.request.body;
             let updateInfo = {}
             if (designForm && designForm != jewellery.designForm) {
@@ -113,6 +114,9 @@ export default class JewelleryController {
             }
             if (price && price != jewellery.price) {
                 updateInfo.price = price;
+            }
+            if (isHiddenField != undefined && isHiddenField != jewellery.isHiddenField) {
+                updateInfo.isHiddenField = isHiddenField;
             }
             if (extraProperties && extraProperties != jewellery.extraProperties) {
                 updateInfo.extraProperties = extraProperties;
