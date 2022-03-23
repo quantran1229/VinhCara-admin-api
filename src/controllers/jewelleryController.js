@@ -117,6 +117,7 @@ export default class JewelleryController {
             }
             if (isHiddenPrice != undefined && isHiddenPrice != jewellery.isHiddenPrice) {
                 updateInfo.isHiddenPrice = isHiddenPrice;
+                if (isHiddenPrice) updateInfo.price = null;
             }
             if (extraProperties && extraProperties != jewellery.extraProperties) {
                 updateInfo.extraProperties = extraProperties;
