@@ -889,9 +889,37 @@ export default class JewelleryController {
             if (query.type) {
                 condition.type = query.type
             }
+
+            if (query.stockId) {
+                condition.stockId = query.stockId
+            }
+
+            if (query.status) {
+                condition.status = query.status
+            }
+
+            let order = [
+                ['stockId', 'DESC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'stockIdDESC':
+                        order = [
+                            ['stockId', 'DESC']
+                        ];
+                        break;
+                    case 'stockIdASC':
+                        order = [
+                            ['stockId', 'ASC']
+                        ];
+                        break;
+                }
+            }
+
             const pager = paging(query);
             let result = await JewellerySerial.findAndCountAll(Object.assign({
                 where: condition,
+                order: order,
                 include: [{
                     model: Jewellery,
                     as: 'generalInfo',
