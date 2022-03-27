@@ -19,7 +19,13 @@ module.exports = (sequelize, DataTypes) => {
         model: sequelize.models.JewellerySerial,
         as: 'serialList',
         required: false
-      }];
+      },
+      {
+        model: sequelize.models.NewJewellery,
+        as: 'newProductInfo',
+        attributes: ['order']
+    }
+    ];
       return this.findOne({
         where: {
           productCode: id
