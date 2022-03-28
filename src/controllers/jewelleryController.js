@@ -1089,4 +1089,16 @@ export default class JewelleryController {
             return res.send(ctx);
         }
     }
+
+    static getListNewJewelleryOrder = async (ctx, next) => {
+        try {
+            const newProducts = await NewJewellery.findAll()
+            res.setSuccess(newProducts, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('getListNewJewelleryOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
 }

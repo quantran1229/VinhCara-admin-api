@@ -120,4 +120,6 @@ router.post('/new-jewellery', jwtValidate, validate({
 router.get('/new-jewellery', jwtValidate, JewelleryController.getNewJewellery);
 
 router.delete('/new-jewellery/:id', jwtValidate, JewelleryController.deleteNewProductOrder);
+
+router.get('/new-jewellery-order', jwtValidate, JewelleryController.getListNewJewelleryOrder);
 export default router;
