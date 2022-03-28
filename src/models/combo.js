@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     static getInfo(id,check) {
+      let condition = {};
       if (!isNaN(id)) {
         condition.id = id;
       } else {
