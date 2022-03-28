@@ -37,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
         order: orderBy || [
           ['createdAt', 'DESC']
         ],
-        attributes: ['id', 'name', 'mediafiles', 'link'],
+        attributes: ['id', 'name', 'mediafiles', 'link', 'status'],
       }, pager));
       return {
         count: result.count,
