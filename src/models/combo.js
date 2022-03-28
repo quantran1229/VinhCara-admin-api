@@ -63,6 +63,11 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Combo',
     tableName: 'combo',
+    defaultScope: {
+      where: {
+        status: combo.STATUS.ACTIVE
+      }
+    }
   });
   return combo;
 };
