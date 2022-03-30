@@ -16,7 +16,7 @@ router.post('/blogs',validate({
     body: {
         slug: {
             type: 'string',
-            required: true
+            required: false
         },
         publishAt: {
             type: 'string',

@@ -231,7 +231,7 @@ export default class BLogController {
             let blog = await Blog.create({
                 type,
                 title,
-                slug: buildSlug(slug),
+                slug: slug ? buildSlug(slug): `${buildSlug(title)}-${dayjs().unix()}`,
                 body,
                 status: status ? status : Blog.STATUS.ACTIVE,
                 publishAt,
