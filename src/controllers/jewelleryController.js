@@ -141,8 +141,7 @@ export default class JewelleryController {
             if (isShowOnWeb != undefined && isShowOnWeb != jewellery.isShowOnWeb) {
                 updateInfo.isShowOnWeb = isShowOnWeb;
                 if (isShowOnWeb) {
-                    updateInfo.meta = jewellery.meta || {};
-                    updateInfo.meta.showOnWebAt = dayjs().format();
+                    updateInfo.showOnWebTime = dayjs().format();
                 }
             }
             if (shape && shape != jewellery.shape) {
