@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
         order: orderBy || [
           ['createdAt', 'DESC']
         ],
-        attributes: ['id', 'name', 'mediafiles', 'link', [Sequelize.fn('array_length', Sequelize.col("productCode"), 1), 'totalProduct', 'createdAt']],
+        attributes: ['id', 'name', 'mediafiles', 'link', [Sequelize.fn('array_length', Sequelize.col("productCode"), 1), 'totalProduct'],'createdAt'],
       }, pager));
       return {
         count: result.count,
