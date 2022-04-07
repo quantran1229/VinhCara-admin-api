@@ -110,7 +110,7 @@ export default class BLogController {
             const result = await Blog.findAndCountAll(Object.assign({
                 where: condition,
                 order: order,
-                attributes: ['id', 'type', 'title', 'slug', 'status', 'createdBy', 'createdAt', 'updatedAt', 'publishAt', 'seoInfo', 'mediaFiles', 'preview'],
+                attributes: ['id', 'type', 'title', 'slug', 'status', 'createdBy', 'createdAt', 'updatedAt', 'publishAt', 'seoInfo', 'mediaFiles', 'preview', 'publishAt'],
                 include: [{
                     model: BlogType,
                     as: 'blogTypeInfo',

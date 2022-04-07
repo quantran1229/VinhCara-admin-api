@@ -26,7 +26,7 @@ router.post('/blogs',validate({
             type: 'array',
             required: true,
             itemType: 'number',
-            min: 1
+            min: 0
         }
     }
 }), jwtValidate, BlogController.postCreateNewBlog)

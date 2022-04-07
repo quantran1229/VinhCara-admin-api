@@ -25,6 +25,7 @@ import db, {
 import {
     paging
 } from '../utils/utils';
+import dayjs from 'dayjs';
 
 const res = new Response();
 
@@ -139,6 +140,10 @@ export default class JewelleryController {
             }
             if (isShowOnWeb != undefined && isShowOnWeb != jewellery.isShowOnWeb) {
                 updateInfo.isShowOnWeb = isShowOnWeb;
+                if (isShowOnWeb) {
+                    updateInfo.meta = jewellery.meta || {};
+                    updateInfo.meta.showOnWebAt = dayjs().format();
+                }
             }
             if (shape && shape != jewellery.shape) {
                 updateInfo.shape = shape;
@@ -470,8 +475,7 @@ export default class JewelleryController {
                 let keyword = removeAccent(query.keyword).toLowerCase();
                 condition = {
                     ...condition,
-                    [Op.or]: [
-                        {
+                    [Op.or]: [{
                             productCode: {
                                 [Op.iLike]: `%${keyword}%`
                             }
@@ -539,8 +543,7 @@ export default class JewelleryController {
                 };
             }
 
-            if (query.isShowOnWeb != undefined)
-            {
+            if (query.isShowOnWeb != undefined) {
                 condition.isShowOnWeb = query.isShowOnWeb == "true" ? true : false
             }
 
@@ -603,8 +606,7 @@ export default class JewelleryController {
                 group: ['id', 'newProductInfo.productCode'],
                 order: order,
                 having: havingCondition
-            }, pager)), Jewellery.count({
-            }),  Jewellery.count({
+            }, pager)), Jewellery.count({}), Jewellery.count({
                 where: {
                     isShowOnWeb: true
                 }
@@ -617,7 +619,7 @@ export default class JewelleryController {
             res.setSuccess({
                 count: result[0],
                 list: result[1],
-                extraCount:{
+                extraCount: {
                     totalCount: result[2],
                     totalShow: result[3],
                     totalHide: result[4]
@@ -686,8 +688,7 @@ export default class JewelleryController {
                 let keyword = removeAccent(query.keyword).toLowerCase();
                 condition = {
                     ...condition,
-                    [Op.or]: [
-                        {
+                    [Op.or]: [{
                             productCode: {
                                 [Op.iLike]: `%${keyword}%`
                             }
@@ -1034,14 +1035,14 @@ export default class JewelleryController {
             transaction = await db.sequelize.transaction();
             for (let i of list) {
                 let y = await NewJewellery.findOne({
-                    where:{
+                    where: {
                         productCode: i.productCode
                     }
                 });
-                if (y){
+                if (y) {
                     await y.update({
                         order: i.order
-                    },{
+                    }, {
                         transaction
                     });
                     continue;
