@@ -57,7 +57,7 @@ export default class LocationController {
             const attributes = await AttributeName.findAndCountAll(Object.assign({
                 where: condition,
                 order: order,
-                attributes: ["showName", "name", "desc", "type", "attributeCode"]
+                attributes: ["showName", "name", "status", "desc", "type", "attributeCode"]
             }, pager));
 
             // Return list
