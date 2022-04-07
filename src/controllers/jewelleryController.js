@@ -1047,14 +1047,14 @@ export default class JewelleryController {
                     });
                     continue;
                 }
-                let x = await NewJewellery.findOne({
-                    where: {
-                        order: i.order
-                    }
-                });
-                if (x) await x.destroy({
-                    transaction
-                });
+                // let x = await NewJewellery.findOne({
+                //     where: {
+                //         order: i.order
+                //     }
+                // });
+                // if (x) await x.destroy({
+                //     transaction
+                // });
                 await NewJewellery.create({
                     productCode: i.productCode,
                     order: i.order
