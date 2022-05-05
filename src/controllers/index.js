@@ -21,6 +21,9 @@ import LuxuryJewelleryController from './luxuryJewelleryController';
 import UserTypeController from './userTypeController';
 import PermissionController from './permissionController';
 import CustomerController from './customerController';
+import RedirectController from './redirectController';
+import NotFoundController from './404Controller';
+import SEOController from './seoController';
 
 module.exports = {
     HealthController,
@@ -45,5 +48,8 @@ module.exports = {
     LuxuryJewelleryController,
     UserTypeController,
     PermissionController,
-    CustomerController
+    CustomerController,
+    RedirectController,
+    NotFoundController,
+    SEOController
 }
