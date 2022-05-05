@@ -107,7 +107,7 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
             });
             continue
         }
-        if (jew.serialList.length > 0) {
+        if (jew.serialList.length > 0 && !jew.isHiddenPrice) {
             if (jew.type == Jewellery.TYPE.DOUBLE) {
                 let price = (jew.serialList.find(e => e.gender == 1) ? parseInt(jew.serialList.find(e => e.gender == 1).price) : 0) + (jew.serialList.find(e => e.gender == 2) ? parseInt(jew.serialList.find(e => e.gender == 2).price) : 0);
                 await jew.update({
