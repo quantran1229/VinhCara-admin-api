@@ -18,7 +18,8 @@ import db, {
     Jewellery,
     DiamondSerial,
     Diamond,
-    SavedAddress
+    SavedAddress,
+    Coupon
 } from '../models';
 import {
     paging
@@ -61,6 +62,11 @@ export default class CustomerController {
                             as: 'withDiamond',
                             attributes: ['id', 'type', 'quantity', 'gender', 'size', 'lettering', 'price', 'itemInfo'],
                         }]
+                    },{
+                        required: false,
+                        as: 'couponInfo',
+                        model: Coupon,
+                        attributes: ['id', 'code']
                     }],
                 }, {
                     model: WishlistLog,
@@ -193,7 +199,7 @@ export default class CustomerController {
             let pager = paging(query);
             const result = await Customer.findAndCountAll(Object.assign({
                 where: condition,
-                attributes: ['id', 'code', 'name', 'email', 'phone', 'status', 'createdAt', 'updatedAt'],
+                attributes: ['id', 'code', 'name', 'email', 'phone', 'status', 'avatar', 'createdAt', 'updatedAt'],
                 order: order,
                 include: [{
                     model: SavedAddress,

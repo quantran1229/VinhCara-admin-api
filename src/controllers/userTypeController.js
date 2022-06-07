@@ -91,7 +91,7 @@ export default class UserTypeController {
             let pager = paging(query);
             const result = await UserType.findAndCountAll(Object.assign({
                 where: condition,
-                attributes: ["id", "name", "createdBy", "createdAt"],
+                attributes: ["id", "name", "status", "createdBy", "createdAt"],
                 order: order,
                 include: [{
                     model: User,

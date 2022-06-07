@@ -17,10 +17,7 @@ import db, {
     NewJewellery,
     WishlistLog,
     Stock,
-    StoreContact,
-    Location,
-    Diamond,
-    DiamondSerial
+    Category
 } from '../models';
 import {
     paging
@@ -459,12 +456,12 @@ export default class JewelleryController {
                         break;
                     case 'priceASC':
                         order = [
-                            ['totalPrice', 'ASC']
+                            ['price', 'ASC NULLS FIRST']
                         ];
                         break;
                     case 'priceDESC':
                         order = [
-                            ['totalPrice', 'DESC']
+                            ['price', 'DESC NULLS LAST']
                         ];
                         break;
                 }
@@ -583,7 +580,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], "isShowOnWeb"
                 ],
                 duplicate: false,
                 include: [{
@@ -599,10 +596,16 @@ export default class JewelleryController {
                             type: JewellerySerial.TYPE.REAL
                         },
                         attributes: []
+                    },
+                    {
+                        model: Category,
+                        as: 'categoryInfo',
+                        required: false,
+                        attributes: ["mediafiles"]
                     }
                 ],
                 subQuery: false,
-                group: ['id', 'newProductInfo.productCode'],
+                group: ['id', 'newProductInfo.productCode','Jewellery.productCode'],
                 order: order,
                 having: havingCondition
             }, pager)), Jewellery.count({}), Jewellery.count({

@@ -27,6 +27,10 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'tags',
                 foreignKey: 'blogId',
             });
+            Blog.belongsTo(models.User, {
+                as: 'creatorInfo',
+                foreignKey: 'createdBy',
+            });
         }
     };
     Blog.init({

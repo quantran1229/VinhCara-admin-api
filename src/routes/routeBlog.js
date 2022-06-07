@@ -24,7 +24,7 @@ router.post('/blogs',validate({
         },
         tagIds: {
             type: 'array',
-            required: true,
+            required: false,
             itemType: 'number',
             min: 0
         }

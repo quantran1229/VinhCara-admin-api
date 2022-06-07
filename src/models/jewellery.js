@@ -113,6 +113,12 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'name',
         as: 'sizeInfo'
       })
+
+      Jewellery.belongsTo(models.Category, {
+        foreignKey: 'mainCategory',
+        targetKey: 'name',
+        as: 'categoryInfo'
+      })
     }
   };
   Jewellery.init({
