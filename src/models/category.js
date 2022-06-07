@@ -30,6 +30,12 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'id',
         as: 'parent'
       });
+
+      Category.hasMany(models.Jewellery,{
+        foreignKey: 'mainCategory',
+        sourceKey: 'name',
+        as: 'jewellery'
+      });
     }
   };
   Category.init({
