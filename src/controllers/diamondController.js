@@ -41,6 +41,7 @@ export default class DiamondsController {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
+
             // Return info
             res.setSuccess(diamond, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
@@ -324,7 +325,7 @@ export default class DiamondsController {
             const pager = paging(query);
             let result = await Promise.all([Diamond.count({
                 where: condition,
-            }),Diamond.findAll(Object.assign({
+            }), Diamond.findAll(Object.assign({
                 where: condition,
                 order: order,
                 duplicate: false,
@@ -661,6 +662,25 @@ export default class DiamondsController {
             if (!diamondSerial) {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
             }
+
+            let jewelleryCondition = {
+                type: {
+                    [Op.not]: Jewellery.TYPE.DOUBLE // K recomend Sản phẩm đôi
+                },
+                shape: diamondSerial.shape,
+                diamondSize: {
+                    [Op.between]: [parseFloat(Math.floor(diamondSerial.size * 10) / 10) - 0.5, parseFloat(Math.floor(diamondSerial.size * 10) / 10) + 0.5]
+                },
+                hasDiamond: {
+                    [Op.gt]: 0
+                }
+            };
+            let jewelleryList = await Jewellery.findAll({
+                where: jewelleryCondition,
+                attributes: ['productCode', 'productName', 'type']
+            });
+
+            diamondSerial.dataValues.jewelleryList = jewelleryList;
             res.setSuccess(diamondSerial, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
