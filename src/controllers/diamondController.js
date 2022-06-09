@@ -41,27 +41,6 @@ export default class DiamondsController {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
-            if (diamond.size)
-            {
-                let jewelleryCondition = {
-                    type: {
-                        [Op.not]: Jewellery.TYPE.DOUBLE // K recomend Sản phẩm đôi
-                    },
-                    shape: diamond.shape,
-                    diamondSize: {
-                        [Op.between]: [parseFloat(Math.floor(diamond.size * 10) / 10) - 0.5, parseFloat(Math.floor(diamond.size * 10) / 10) + 0.5]
-                    },
-                    hasDiamond: {
-                        [Op.gt]: 0
-                    }
-                };
-                let jewelleryList = await Jewellery.findAll({
-                    where: jewelleryCondition,
-                    attributes: ['productCode', 'productName', 'type']
-                });
-                diamond.dataValues.jewelleryList = jewelleryList;
-            }
-            else diamond.dataValues.jewelleryList = [];
 
             // Return info
             res.setSuccess(diamond, Constant.instance.HTTP_CODE.Success);
