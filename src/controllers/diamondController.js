@@ -677,7 +677,7 @@ export default class DiamondsController {
             };
             let jewelleryList = await Jewellery.findAll({
                 where: jewelleryCondition,
-                attributes: ['productCode', 'productName', 'type']
+                attributes: ['productCode', 'productName', 'type', 'mainCategory']
             });
 
             diamondSerial.dataValues.jewelleryList = jewelleryList;
