@@ -24,6 +24,7 @@ import CustomerController from './customerController';
 import RedirectController from './redirectController';
 import NotFoundController from './404Controller';
 import SEOController from './seoController';
+import SitemapController from './sitemapController';
 
 module.exports = {
     HealthController,
@@ -51,5 +52,6 @@ module.exports = {
     CustomerController,
     RedirectController,
     NotFoundController,
-    SEOController
+    SEOController,
+    SitemapController
 }
