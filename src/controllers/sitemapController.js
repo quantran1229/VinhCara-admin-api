@@ -91,7 +91,7 @@ export default class SitemapController {
                     status: status
                 }
             }));
-            let link = process.env.WEB_PUBLIC_URL + '/sitemap/' + buildSlug(removeAccent(name.toLowerCase()));
+            let link = process.env.WEB_PUBLIC_URL + '/sitemap/' + buildSlug(removeAccent(name.toLowerCase())) + '.xml';
             const checkDuplicate = await Sitemap.findOne({
                 where:{
                     [Op.or]:[{
