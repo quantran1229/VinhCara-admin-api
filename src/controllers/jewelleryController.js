@@ -15,7 +15,6 @@ import db, {
     Collection,
     Combo,
     NewJewellery,
-    WishlistLog,
     Stock,
     Category
 } from '../models';
@@ -23,7 +22,31 @@ import {
     paging
 } from '../utils/utils';
 import dayjs from 'dayjs';
+import csvConverter from 'json-2-csv';
+import csv from 'csvtojson/v2';
+import multer from '@koa/multer';
+const storage = multer.memoryStorage();
 
+// Upload Limit
+const limit = {
+    fileSize: 10 * 1000000 // calculate by byte
+}
+
+// Filter only image + video
+function fileFilter(req, file, cb) {
+    let mimeType = file.mimetype;
+    let mainType = mimeType.split('/')[1];
+    if (mainType !== 'csv') {
+        return cb(null, false)
+    }
+    return cb(null, true)
+}
+
+const uploadSingle = multer({
+    storage: storage,
+    limit: limit,
+    fileFilter: fileFilter
+}).single("file")
 const res = new Response();
 
 export default class JewelleryController {
@@ -605,7 +628,7 @@ export default class JewelleryController {
                     }
                 ],
                 subQuery: false,
-                group: ['id', 'newProductInfo.productCode','Jewellery.productCode'],
+                group: ['id', 'newProductInfo.productCode', 'Jewellery.productCode'],
                 order: order,
                 having: havingCondition
             }, pager)), Jewellery.count({}), Jewellery.count({
@@ -1100,6 +1123,187 @@ export default class JewelleryController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('getListNewJewelleryOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static exportJewelleryList = async (ctx, next) => {
+        try {
+            const query = ctx.request.query;
+            // Query
+            let condition = {};
+            let order = [
+                ['productName', 'ASC']
+            ];
+
+            if (query.keyword) {
+                let keyword = removeAccent(query.keyword).toLowerCase();
+                condition = {
+                    ...condition,
+                    [Op.or]: [{
+                            productCode: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            productName: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            mainCategory: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            gemstone: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            shape: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            goldProperty: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }
+                    ]
+                }
+            }
+
+            if (query.type) {
+                condition.type = query.type
+            }
+
+            if (query.category) {
+                if (query.category.includes('-')) {
+                    condition.category = Sequelize.literal(`'${removeAccent(query.category.trim().toLowerCase())}' = ANY("productCategorySlug")`)
+                } else
+                    condition.category = Sequelize.literal(`'${query.category}' = ANY("productCategory")`);
+            }
+
+            if (query.productCode) {
+                const list = query.productCode.split(',');
+                condition.productCode = {
+                    [Op.in]: list
+                };
+            }
+
+            if (query.priceFrom != null && query.priceTo != null) {
+                condition.price = {
+                    [Op.between]: [parseInt(query.priceFrom) || 0, parseInt(query.priceTo) || 0]
+                };
+            } else
+            if (query.priceFrom) {
+                condition.price = {
+                    [Op.gte]: parseInt(query.priceFrom)
+                };
+            } else
+            if (query.priceTo) {
+                condition.price = {
+                    [Op.lte]: parseInt(query.priceTo)
+                };
+            }
+
+            if (query.isShowOnWeb != undefined) {
+                condition.isShowOnWeb = query.isShowOnWeb == "true" ? true : false
+            }
+
+            let list = await Jewellery.findAll({
+                where: condition,
+                attributes: [
+                    'productCode', 'productName', "isShowOnWeb", "isHiddenPrice"
+                ],
+            });
+            const data = await csvConverter.json2csvAsync(list.map(e => {
+                return {
+                    productCode: e.productCode,
+                    productName: e.productName,
+                    isShowOnWeb: e.isShowOnWeb ? 1 : 0,
+                    isHiddenPrice: e.isHiddenPrice ? 1 : 0
+                }
+            }));
+
+            // Return list
+            ctx.set('Content-disposition', 'attachment; filename=jewellery.csv');
+            ctx.set('Content-Type', 'text/csv');
+            ctx.body = data;
+            return ctx;
+        } catch (e) {
+            Logger.error('getJewelleryList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static importJewelleryList = async (ctx, next) => {
+        try {
+            await uploadSingle(ctx, next);
+            let data = await csv().fromString(ctx.file.buffer.toString('utf-8'));
+            const originalData = JSON.parse(JSON.stringify(data));
+            let isFileWrongFormat = false;
+            if (!data[0] || JSON.stringify(Object.keys(data[0]).sort()) != JSON.stringify(['isHiddenPrice', 'isShowOnWeb', 'productCode', 'productName'])) {
+                isFileWrongFormat = true;
+                console.log(Object.keys(data[0]).sort())
+                res.setSuccess({
+                    isFileWrongFormat: isFileWrongFormat,
+                    message: `File header must have 'productCode', 'productName', 'isShowOnWeb', 'isHiddenPrice'`,
+                    success: 0,
+                    failed: data.length,
+                });
+                return res.send(ctx)
+            }
+            const checkExisted = await Jewellery.findAll({
+                where: {
+                    productCode: {
+                        [Op.in]: data.map(e => e.productCode)
+                    }
+                },
+                attributes: ['productCode']
+            });
+            const notFound = data.filter(e => !checkExisted.find(x => x.dataValues.productCode == e.productCode)).map(e => e.productCode);
+            const wrongValue = data.filter(e => {
+                return (e.isShowOnWeb != 1 && e.isShowOnWeb != 0) || (e.isHiddenPrice != 1 && e.isHiddenPrice != 0)
+            }).map(e => e.productCode);
+            data = data.filter(e => {
+
+                return !(notFound.find(x => x == e.productCode) || wrongValue.find(x => x == e.productCode))
+            });
+            await Promise.all(data.map(async (jew) => {
+                await Jewellery.update({
+                    isShowOnWeb: parseInt(jew.isShowOnWeb) == 1 ? true : false,
+                    isHiddenPrice: parseInt(jew.isHiddenPrice) == 1 ? true : false,
+                }, {
+                    where: {
+                        productCode: jew.productCode
+                    }
+                })
+            }))
+            res.setSuccess({
+                isFileWrongFormat: isFileWrongFormat,
+                success: data.length,
+                failed: notFound.length + wrongValue.length,
+                notFound: notFound.map(e => {
+                    return {
+                        productCode: e,
+                        line: originalData.findIndex(x => x.productCode == e) + 2
+                    }
+                }),
+                wrongValue: wrongValue.map(e => {
+                    return {
+                        productCode: e,
+                        line: originalData.findIndex(x => x.productCode == e) + 2
+                    }
+                }),
+                message: `Success: ${data.length} Failed: ${notFound.length + wrongValue.length}`
+            });
+            return res.send(ctx)
+        } catch (e) {
+            Logger.error('getJewelleryList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
