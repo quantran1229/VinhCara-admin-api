@@ -992,7 +992,6 @@ export default class JewelleryController {
                     })
                 }
             }
-            console.log(condition)
 
             const pager = paging(query);
             let result = await JewellerySerial.findAndCountAll(Object.assign({
