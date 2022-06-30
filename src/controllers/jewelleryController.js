@@ -945,7 +945,8 @@ export default class JewelleryController {
             }
 
             if (query.type) {
-                condition.type = query.type
+                if (!conditionJewellery) conditionJewellery = {}
+                conditionJewellery.type = query.type
             }
 
             if (query.stockId) {
@@ -973,6 +974,25 @@ export default class JewelleryController {
                         break;
                 }
             }
+
+            if (query.stockStatus !== undefined)
+            {
+                if (query.stockStatus == 1)
+                {
+                    condition.status = 1;
+                    condition.type = JewellerySerial.TYPE.REAL
+                }
+                else
+                {
+                    Object.assign(condition,{
+                        [Op.not]:{
+                            status: 1,
+                            type: JewellerySerial.TYPE.REAL
+                        }
+                    })
+                }
+            }
+            console.log(condition)
 
             const pager = paging(query);
             let result = await JewellerySerial.findAndCountAll(Object.assign({
