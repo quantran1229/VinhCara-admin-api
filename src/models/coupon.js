@@ -36,7 +36,7 @@ module.exports = (sequelize, DataTypes) => {
                     ['endTime', 'DESC NULLS LAST'],
                     ['startTime', 'ASC']
                 ],
-                attributes: ['id', 'code', 'gifts', 'discountPrice', 'discountPercent', 'couponType', 'minimumRequirement', 'desc', 'showValue', 'createdAt', 'startTime', 'endTime', 'userType']
+                attributes: ['id', 'code', 'gifts', 'discountPrice', 'discountPercent', 'couponType', 'minimumRequirement', 'desc', 'showValue', 'createdAt', 'startTime', 'endTime', 'userType', 'status']
             }, pager));
             return {
                 count: result.count,
