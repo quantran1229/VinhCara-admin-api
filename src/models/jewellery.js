@@ -78,7 +78,7 @@ module.exports = (sequelize, DataTypes) => {
           ['productCode', 'ASC']
         ],
         attributes: [
-          ['productCode', 'id'], 'productCode', 'mediafiles', 'productName', 'mainCategory', 'type', 'productCategory', 'price', 'totalViews', 'totalOrders'
+          ['productCode', 'id'], 'productCode', 'mediafiles', 'productName', 'mainCategory', 'type', 'productCategory', 'price', 'totalViews', 'totalOrders', 'createdAt'
         ],
         include: includeWishlist ? includeWishlist : null
       }, pager))]);

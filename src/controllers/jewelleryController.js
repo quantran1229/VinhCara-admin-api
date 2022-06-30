@@ -603,7 +603,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], "isShowOnWeb"
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], "isShowOnWeb", "createdAt"
                 ],
                 duplicate: false,
                 include: [{
