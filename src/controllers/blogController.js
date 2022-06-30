@@ -58,6 +58,37 @@ export default class BLogController {
                     ]
                 }
             }
+            if(query.keyword) {
+                let filterKeywords = await Promise.all([
+                    Tag.findAll({
+                        where: {
+                            title: {
+                                [Op.iLike]: `%${query.keyword}%`
+                            }
+                        }
+                    }), BlogType.findAll({
+                        where: {
+                            name: {
+                                [Op.iLike]: `%${query.keyword}%`
+                            }
+                        }
+                    })
+                ])
+                condition = {
+                    ...condition,
+                    [Op.or]: [{
+                        title: {
+                            [Op.iLike]: `%${query.keyword}%`
+                        },
+                    },
+                        {
+                            type: {
+                                [Op.in]: filterKeywords[1].map(item => item.id)
+                            }
+                        }
+                    ]
+                }
+            }
             if (query.name) {
                 condition.title = {
                     [Op.iLike]: `%${query.name}%`
