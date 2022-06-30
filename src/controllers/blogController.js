@@ -110,35 +110,55 @@ export default class BLogController {
                 }
             }
             const pager = paging(query);
-            const result = await Blog.findAndCountAll(Object.assign({
-                where: condition,
-                order: order,
-                attributes: ['id', 'type', 'title', 'slug', 'status', 'createdBy', 'createdAt', 'updatedAt', 'publishAt', 'seoInfo', 'mediaFiles', 'preview', 'publishAt'],
-                include: [{
+            const result = await Promise.all([
+                Blog.findAndCountAll(Object.assign({
+                    where: condition,
+                    order: order,
+                    attributes: ['id', 'type', 'title', 'slug', 'status', 'createdBy', 'createdAt', 'updatedAt', 'publishAt', 'seoInfo', 'mediaFiles', 'preview', 'publishAt'],
+                    include: [{
                         model: BlogType,
                         as: 'blogTypeInfo',
                         required: Object.keys(categoryCondition).length > 0 ? true : false,
                         attributes: ['id', 'name', 'slug'],
                         where: categoryCondition
                     },
-                    {
-                        model: Tag,
-                        as: 'tags',
-                        required: Object.keys(tagCondition).length > 0 ? true : false,
-                        where: tagCondition,
-                        attributes: ['id', 'title', 'link']
-                    },
-                    {
-                        model: User,
-                        as: 'creatorInfo',
-                        attributes: ['id','name'],
-                        required: false
+                        {
+                            model: Tag,
+                            as: 'tags',
+                            required: Object.keys(tagCondition).length > 0 ? true : false,
+                            where: tagCondition,
+                            attributes: ['id', 'title', 'link']
+                        },
+                        {
+                            model: User,
+                            as: 'creatorInfo',
+                            attributes: ['id','name'],
+                            required: false
+                        }
+                    ]
+                }, pager)), Blog.count({
+                    where: {
+                        status: Blog.STATUS.ACTIVE
                     }
-                ]
-            }, pager));
+                }), Blog.count({
+                    where: {
+                        status: Blog.STATUS.INACTIVE
+                    }
+                }), Blog.count({
+                    where: {
+                        status: Blog.STATUS.STOP
+                    }
+                })
+            ])
             res.setSuccess({
-                count: result.count,
-                list: result.rows
+                count: result[0] && result[0].count ? result[0].count : 0,
+                list: result[0] && result[0].rows ? result[0].rows : [],
+                extraCount: {
+                    totalCount: result[0] && result[0].count ? result[0].count : 0,
+                    active: result[1],
+                    inactive: result[2],
+                    stop: result[3]
+                }
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
@@ -248,7 +268,6 @@ export default class BLogController {
                 return res.send(ctx);
             }
             let blog = await Blog.create({
-                createdBy: ctx.state.user.id,
                 type,
                 title,
                 slug: slug ? buildSlug(slug) : `${buildSlug(title)}-${dayjs().unix()}`,
