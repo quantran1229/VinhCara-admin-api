@@ -73,8 +73,19 @@ export default class CouponController {
                 condition.status = query.status;
             }
             const pager = paging(query);
-            const result = await Coupon.getList(condition, pager);
-            res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
+            const [result,totalStatusCount] = await Promise.all([Coupon.getList(condition, pager),
+            Coupon.findAll({
+                attributes: [[Sequelize.literal('COUNT(*)'),"count"], "status"],
+                group: ['status']
+            })]);
+            const extraCount = {
+                extraCount: {
+                    totalInactive: totalStatusCount.find(e=> e.status == Coupon.STATUS.INACTIVE)?.dataValues.count || 0,
+                    totalActive: totalStatusCount.find(e=> e.status == Coupon.STATUS.ACTIVE)?.dataValues.count || 0,
+                    totalStop: (totalStatusCount.find(e=> e.status == Coupon.STATUS.FINISHED)?.dataValues.count || 0) + (totalStatusCount.find(e=> e.status == Coupon.STATUS.STOP)?.dataValues.count || 0) ,
+                }
+            }
+            res.setSuccess(Object.assign(result,extraCount), Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('getListCoupon ' + e.message + ' ' + e.stack);

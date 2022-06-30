@@ -144,8 +144,11 @@ var activateCoupon = new CronJob('0 * * * * *', async function () {
         where: {
             status: Coupon.STATUS.INACTIVE,
             endTime: {
-                [Op.not]: null,
-                [Op.lte]: dayjs().add(-1, 's').toISOString()
+                [Op.or]: [{
+                    [Op.not]: null,
+                }, {
+                    [Op.gte]: dayjs().add(-1, 's').toISOString()
+                }]
             }
         }
     });
@@ -173,6 +176,42 @@ var activateCoupon = new CronJob('0 * * * * *', async function () {
 });
 
 activateCoupon.start();
+
+// Deactivate Coupon
+var deactivateCoupon = new CronJob('0 * * * * *', async function () {
+    Logger.info("Start check for Coupon to end");
+    let coupons = await Coupon.findAll({
+        where: {
+            status: Coupon.STATUS.ACTIVE,
+            endTime: {
+                [Op.lte]: dayjs().add(-1, 's').toISOString()
+            }
+        }
+    });
+    if (coupons.length > 0) {
+        let transaction;
+        try {
+            transaction = await db.sequelize.transaction();
+            await Coupon.update({
+                status: Coupon.STATUS.FINISHED
+            }, {
+                where: {
+                    id: {
+                        [Op.in]: coupons.map(e => e.id)
+                    }
+                },
+                transaction
+            })
+            await transaction.commit();
+            Logger.info("Total deactivate coupons: " + coupons.length)
+        } catch (err) {
+            await transaction.rollback();
+            Logger.error('cron: activateCoupon ' + err.message + ' ' + err.stack + ' ' + (err.errors && err.errors[0] ? err.errors[0].message : ''));
+        }
+    }
+});
+
+deactivateCoupon.start();
 
 var activateBlog = new CronJob('0 * * * * *', async function () {
     Logger.info("Start check for blog to start");
