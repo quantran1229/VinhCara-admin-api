@@ -603,7 +603,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], "isShowOnWeb"
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], "isShowOnWeb", "createdAt"
                 ],
                 duplicate: false,
                 include: [{
@@ -783,7 +783,7 @@ export default class JewelleryController {
 
             let havingCondition = null;
             if (query.stockStatus != undefined) {
-                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 1' : ' = 0'}`);
+                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' >= 1' : ' = 0'}`);
             }
             const pager = paging(query);
             let result = await Promise.all([query.stockStatus == undefined ? Jewellery.count({
@@ -856,11 +856,43 @@ export default class JewelleryController {
                 group: ['id', 'newProductInfo.productCode'],
                 order: order,
                 having: havingCondition
-            }, pager))]);
+            }, pager)),Jewellery.count({
+                include: [{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                    required: true,
+                    attributes: ['order']
+                }]
+            }), Jewellery.count({
+                where: {
+                    isShowOnWeb: true
+                },
+                include: [{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                    required: true,
+                    attributes: ['order']
+                }]
+            }), Jewellery.count({
+                where: {
+                    isShowOnWeb: false
+                },
+                include: [{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                    required: true,
+                    attributes: ['order']
+                }]
+            })]);
             // Return list
             res.setSuccess({
                 count: result[0],
-                list: result[1]
+                list: result[1],
+                extraCount: {
+                    totalCount: result[2],
+                    totalShow: result[3],
+                    totalHide: result[4]
+                }
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {

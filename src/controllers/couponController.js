@@ -80,9 +80,9 @@ export default class CouponController {
             })]);
             const extraCount = {
                 extraCount: {
-                    totalInactive: totalStatusCount.find(e=> e.status == Coupon.STATUS.INACTIVE)?.dataValues.count || 0,
-                    totalActive: totalStatusCount.find(e=> e.status == Coupon.STATUS.ACTIVE)?.dataValues.count || 0,
-                    totalStop: (totalStatusCount.find(e=> e.status == Coupon.STATUS.FINISHED)?.dataValues.count || 0) + (totalStatusCount.find(e=> e.status == Coupon.STATUS.STOP)?.dataValues.count || 0) ,
+                    totalInactive: parseInt(totalStatusCount.find(e=> e.status == Coupon.STATUS.INACTIVE)?.dataValues.count || 0),
+                    totalActive: parseInt(totalStatusCount.find(e=> e.status == Coupon.STATUS.ACTIVE)?.dataValues.count || 0),
+                    totalStop: parseInt(totalStatusCount.find(e=> e.status == Coupon.STATUS.FINISHED)?.dataValues.count || 0) + parseInt(totalStatusCount.find(e=> e.status == Coupon.STATUS.STOP)?.dataValues.count || 0) ,
                 }
             }
             res.setSuccess(Object.assign(result,extraCount), Constant.instance.HTTP_CODE.Success);
