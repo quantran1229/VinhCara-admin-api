@@ -62,7 +62,7 @@ export default class CustomerController {
                             as: 'withDiamond',
                             attributes: ['id', 'type', 'quantity', 'gender', 'size', 'lettering', 'price', 'itemInfo'],
                         }]
-                    },{
+                    }, {
                         required: false,
                         as: 'couponInfo',
                         model: Coupon,
@@ -119,7 +119,7 @@ export default class CustomerController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             if (query.phone) {
                 condition.phone = {
                     [Op.like]: `%${query.phone}%`
@@ -195,6 +195,37 @@ export default class CustomerController {
                         ];
                         break;
                 }
+            }
+            if (query.keyword) {
+                const list = []
+                if (!isNaN(query.keyword)) {
+                    list.push({
+                        phone: {
+                            [Op.like]: `%${query.keyword}%`
+                        }
+                    })
+                    list.push({
+                        id: query.keyword
+                    })
+                }
+                list.push(
+                    Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('"Customer"."name"')), {
+                        [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                    })
+                )
+                list.push({
+                    code: {
+                        [Op.iLike]: `%${query.keyword}%`
+                    }
+                })
+                list.push({
+                    email:{
+                        [Op.iLike]: `%${query.keyword}%`
+                    }
+                })
+                condition = {
+                    [Op.or] : list
+                };
             }
             let pager = paging(query);
             const result = await Customer.findAndCountAll(Object.assign({
