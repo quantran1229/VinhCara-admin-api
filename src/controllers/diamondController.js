@@ -330,7 +330,7 @@ export default class DiamondsController {
                 order: order,
                 duplicate: false,
                 attributes: [
-                    ['productCode', 'id'], 'productCode', 'productName', 'mediafiles', 'price', 'shape', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productCode', 'productName', 'mediafiles', 'price', 'shape', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], 'createdAt'
                 ],
                 include: [{
                     model: DiamondSerial,
