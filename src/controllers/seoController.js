@@ -64,7 +64,8 @@ export default class RedirectController {
                 }
             }
             const seo = await SEO.findAll({
-                where: condition
+                where: condition,
+                order: [['id','ASC']]
             });
 
             // Return list
