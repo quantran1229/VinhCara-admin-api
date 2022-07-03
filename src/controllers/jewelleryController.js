@@ -915,7 +915,7 @@ export default class JewelleryController {
             let conditionJewellery;
 
             if (query.keyword) {
-                let jewIdList = await Jewellery.findAll({
+                let [jewIdList,stockIdList] = await Promise.all([Jewellery.findAll({
                     where: {
                         [Op.or]: [Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
                             [Op.iLike]: `%${removeAccent(query.keyword)}%`
@@ -930,7 +930,13 @@ export default class JewelleryController {
                         }]
                     },
                     attributes: ["productOdooId"]
-                });
+                }), Stock.findAll({
+                    where: {
+                        name: {
+                            [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                        }
+                    }
+                })]);
                 condition = {
                     [Op.or]: [{
                         serial: {
@@ -939,6 +945,10 @@ export default class JewelleryController {
                     }, {
                         productOdooId : {
                             [Op.in]:  jewIdList.map(e=>e.productOdooId)
+                        }
+                    }, {
+                        stockId : {
+                            [Op.in]: stockIdList.map(e=>e.id)
                         }
                     }]
                 }

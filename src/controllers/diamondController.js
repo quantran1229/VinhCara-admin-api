@@ -447,7 +447,7 @@ export default class DiamondsController {
             }
             order.push(['type', 'ASC'])
             if (query.keyword) {
-                let diamondIdList = await Diamond.findAll({
+                let [diamondIdList, stockIdList] = await Promise.all[(Diamond.findAll({
                     where: {
                         [Op.or]: [Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
                             [Op.iLike]: `%${removeAccent(query.keyword)}%`
@@ -458,7 +458,13 @@ export default class DiamondsController {
                         }]
                     },
                     attributes: ["productOdooId"]
-                });
+                }), Stock.findAll({
+                    where: {
+                        name: {
+                            [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                        }
+                    }
+                }))];
                 condition = {
                     [Op.or]: [{
                         serial: {
@@ -467,6 +473,10 @@ export default class DiamondsController {
                     }, {
                         productOdooId : {
                             [Op.in]:  diamondIdList.map(e=>e.productOdooId)
+                        }
+                    }, {
+                        stockId: {
+                            [Op.in]:  stockIdList.map(e=>e.id)
                         }
                     }]
                 }
