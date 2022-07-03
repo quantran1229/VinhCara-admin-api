@@ -369,7 +369,7 @@ export default class DiamondsController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             let order = [];
             if (query.orderBy) {
                 switch (query.orderBy) {
@@ -446,6 +446,31 @@ export default class DiamondsController {
                 }
             }
             order.push(['type', 'ASC'])
+            if (query.keyword) {
+                let diamondIdList = await Diamond.findAll({
+                    where: {
+                        [Op.or]: [Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
+                            [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                        }), {
+                            productCode: {
+                                [Op.iLike]: `%${query.keyword}%`
+                            }
+                        }]
+                    },
+                    attributes: ["productOdooId"]
+                });
+                condition = {
+                    [Op.or]: [{
+                        serial: {
+                            [Op.iLike]: `%${query.keyword}%`
+                        }
+                    }, {
+                        productOdooId : {
+                            [Op.in]:  diamondIdList.map(e=>e.productOdooId)
+                        }
+                    }]
+                }
+            }
 
             if (query.priceFrom != null && query.priceTo != null) {
                 condition.price = {

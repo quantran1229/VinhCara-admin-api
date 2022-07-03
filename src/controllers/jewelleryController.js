@@ -913,6 +913,36 @@ export default class JewelleryController {
             // Query
             let condition = {}
             let conditionJewellery;
+
+            if (query.keyword) {
+                let jewIdList = await Jewellery.findAll({
+                    where: {
+                        [Op.or]: [Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
+                            [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                        }), {
+                            productCode: {
+                                [Op.iLike]: `%${query.keyword}%`
+                            }
+                        }, {
+                            mainCategory: {
+                                [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                            }
+                        }]
+                    },
+                    attributes: ["productOdooId"]
+                });
+                condition = {
+                    [Op.or]: [{
+                        serial: {
+                            [Op.iLike]: `%${query.keyword}%`
+                        }
+                    }, {
+                        productOdooId : {
+                            [Op.in]:  jewIdList.map(e=>e.productOdooId)
+                        }
+                    }]
+                }
+            }
             if (query.serial) {
                 condition.serial = {
                     [Op.iLike]: `%${serial}%`
