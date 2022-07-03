@@ -780,6 +780,10 @@ export default class JewelleryController {
                     [Op.lte]: parseInt(query.priceTo)
                 };
             }
+            if (query.isShowOnWeb !== undefined)
+            {
+                condition.isShowOnWeb = query.isShowOnWeb
+            }
 
             let havingCondition = null;
             if (query.stockStatus != undefined) {
