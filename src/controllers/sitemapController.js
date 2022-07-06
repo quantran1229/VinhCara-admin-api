@@ -17,6 +17,9 @@ import {
     Op,
     Sequelize,
 } from 'sequelize';
+import {
+    generateSitemapIndex
+} from '../scripts/sitemapGenerator';
 
 const res = new Response();
 
@@ -84,25 +87,17 @@ export default class SitemapController {
             } = ctx.request.body;
             // Query
             let currentUrls = extractUrls(sitemap);
-            const urls = await Promise.all(currentUrls.map(async e => {
-                const status = await urlStatusCode(e);
-                return {
-                    url: e,
-                    status: status
-                }
-            }));
             let link = process.env.WEB_PUBLIC_URL + '/sitemap/' + buildSlug(removeAccent(name.toLowerCase())) + '.xml';
             const checkDuplicate = await Sitemap.findOne({
-                where:{
-                    [Op.or]:[{
+                where: {
+                    [Op.or]: [{
                         name: name
-                    },{
+                    }, {
                         link: link
                     }]
                 }
             });
-            if (checkDuplicate)
-            {
+            if (checkDuplicate) {
                 res.setError(`Duplicated name`, Constant.instance.HTTP_CODE.Conflict, {
                     field: 'name',
                 });
@@ -112,9 +107,22 @@ export default class SitemapController {
                 sitemap,
                 name,
                 link,
-                urls: urls.filter(e => e.status == 200)
+                urls: currentUrls
             });
 
+            // update mainSitemap
+            const list = await Sitemap.findAll({
+                orrder: [
+                    ['isAutoGen', 'ASC'],
+                    ['id', 'ASC']
+                ],
+                where: {
+                    id: {
+                        [Op.not]: 1
+                    }
+                }
+            });
+            await generateSitemapIndex(list.map(e => e.link))
             // // Return list
             res.setSuccess(newSitemap, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
@@ -140,17 +148,9 @@ export default class SitemapController {
                 sitemap
             } = ctx.request.body;
             let currentUrls = extractUrls(sitemap);
-            const urls = await Promise.all(currentUrls.map(async e => {
-                const status = await urlStatusCode(e);
-                return {
-                    url: e,
-                    status: status
-                }
-            }));
-
             sitemapObj = await sitemapObj.update({
                 sitemap,
-                urls: urls.filter(e => e.status == 200)
+                urls: currentUrls
             });
 
             // Return list

@@ -17,6 +17,7 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     link: DataTypes.STRING,
     SEOInfo: DataTypes.JSONB,
+    SEOId: DataTypes.INTEGER,
     setting: DataTypes.JSONB,
     banner: DataTypes.JSONB,
     parentId: DataTypes.INTEGER

@@ -13,6 +13,9 @@ import Logger from '../utils/logger';
 import {
     Op
 } from 'sequelize';
+import {
+    generateSitemap
+} from '../scripts/sitemapGenerator';
 // ALL CRON JOB HERE
 
 //Check 30 mins after VNPay
@@ -82,7 +85,7 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
             model: JewellerySerial,
             as: 'serialList',
             required: false,
-            attributes: ['type', 'price', 'gender','size']
+            attributes: ['type', 'price', 'gender', 'size']
         }],
         order: [
             [{
@@ -96,10 +99,8 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
         ],
         logging: false
     });
-    for (let jew of list) 
-    {
-        if (jew.isHiddenPrice && jew.price != null)
-        {
+    for (let jew of list) {
+        if (jew.isHiddenPrice && jew.price != null) {
             await jew.update({
                 price: null
             }, {
@@ -117,12 +118,12 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
                 });
             } else {
                 if (jew.price != jew.serialList[0].price)
-                await jew.update({
-                    price: jew.serialList[0].price,
-                    size: jew.serialList[0].size
-                }, {
-                    logging: false
-                })
+                    await jew.update({
+                        price: jew.serialList[0].price,
+                        size: jew.serialList[0].size
+                    }, {
+                        logging: false
+                    })
             }
         } else {
             await jew.update({
@@ -247,3 +248,10 @@ var activateBlog = new CronJob('0 * * * * *', async function () {
     }
 });
 activateBlog.start();
+
+//Sitemap generation
+var regenerateSitemap = new CronJob('* */30 * * * *', async function () {
+    await generateSitemap();
+});
+
+regenerateSitemap.start();

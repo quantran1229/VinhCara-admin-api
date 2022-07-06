@@ -23,5 +23,4 @@ router.put('/SEO/:id', jwtValidate, SEOController.putUpdate);
 
 // Delete
 router.delete('/SEO/:id', jwtValidate, SEOController.delete);
-
 export default router;
