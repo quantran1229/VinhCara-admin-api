@@ -11,7 +11,8 @@ module.exports = (sequelize, DataTypes) => {
     name: DataTypes.STRING,
     sitemap: DataTypes.TEXT,
     urls: DataTypes.JSONB,
-    link: DataTypes.STRING
+    link: DataTypes.STRING,
+    isAutoGen: DataTypes.BOOLEAN
   }, {
     sequelize,
     tableName: 'sitemaps',
