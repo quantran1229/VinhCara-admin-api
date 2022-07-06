@@ -250,7 +250,7 @@ var activateBlog = new CronJob('0 * * * * *', async function () {
 activateBlog.start();
 
 //Sitemap generation
-var regenerateSitemap = new CronJob('* */30 * * * *', async function () {
+var regenerateSitemap = new CronJob('* */20 * * * *', async function () {
     await generateSitemap();
 });
 
