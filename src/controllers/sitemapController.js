@@ -11,8 +11,8 @@ import {
     paging,
     buildSlug
 } from '../utils/utils';
-import extractUrls from 'extract-urls';
-import urlStatusCode from 'url-status-code';
+// import extractUrls from 'extract-urls';
+import { extractUrls } from 'sitemap-urls';
 import {
     Op,
     Sequelize,

@@ -71,7 +71,7 @@ const generateProductSitemap = async () => {
         if (currentSitemap) {
             await currentSitemap.update({
                 sitemap: data,
-                urls: productList.map(e => `${process.env.WEB_PUBLIC_URL}/${e.type == 1 ? 'san-pham-don' : e.type == 2 ? 'san-pham-doi' : 'san-pham-tuy-bien'}/${e.productCode}`),
+                urls: productList.map(e => `${process.env.WEB_PUBLIC_URL}/${e.type == 1 ? 'san-pham-don' : e.type == 2 ? 'san-pham-doi' : 'san-pham-tuy-bien'}/${e.slug}`),
                 isAutoGen: true
             })
         } else
@@ -79,7 +79,7 @@ const generateProductSitemap = async () => {
                 name: name,
                 link: process.env.WEB_PUBLIC_URL + '/sitemap/' + name + '.xml',
                 sitemap: data,
-                urls: productList.map(e => `${process.env.WEB_PUBLIC_URL}/${e.type == 1 ? 'san-pham-don' : e.type == 2 ? 'san-pham-doi' : 'san-pham-tuy-bien'}/${e.productCode}`),
+                urls: productList.map(e => `${process.env.WEB_PUBLIC_URL}/${e.type == 1 ? 'san-pham-don' : e.type == 2 ? 'san-pham-doi' : 'san-pham-tuy-bien'}/${e.slug}`),
                 isAutoGen: true
             });
         totalSitemap.push(currentSitemap.link)
