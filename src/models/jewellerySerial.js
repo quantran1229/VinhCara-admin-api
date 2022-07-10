@@ -57,7 +57,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'JewellerySerial',
     tableName: 'jewellerySerials',
-    timestamps: false,
     defaultScope: {
       where: {
         status: JewellerySerial.STATUS.ACTIVE

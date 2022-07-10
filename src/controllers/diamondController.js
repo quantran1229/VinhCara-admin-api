@@ -141,12 +141,12 @@ export default class DiamondsController {
             let condition = {};
             if (query.keyword) {
                 const list = [];
-               list.push(Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
+                list.push(Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
                     [Op.iLike]: `%${removeAccent(query.keyword)}%`
                 }))
                 list.push({
-                    productCode : {
-                        [Op.iLike]:  `%${query.keyword}%`
+                    productCode: {
+                        [Op.iLike]: `%${query.keyword}%`
                     }
                 })
                 condition = {
@@ -447,7 +447,7 @@ export default class DiamondsController {
             }
             order.push(['type', 'ASC'])
             if (query.keyword) {
-                let [diamondIdList, stockIdList] = await Promise.all[(Diamond.findAll({
+                let [diamondIdList, stockIdList] = await Promise.all([Diamond.findAll({
                     where: {
                         [Op.or]: [Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
                             [Op.iLike]: `%${removeAccent(query.keyword)}%`
@@ -464,7 +464,7 @@ export default class DiamondsController {
                             [Op.iLike]: `%${removeAccent(query.keyword)}%`
                         }
                     }
-                }))];
+                })]);
                 condition = {
                     [Op.or]: [{
                         serial: {
