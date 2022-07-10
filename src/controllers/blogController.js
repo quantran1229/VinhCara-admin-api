@@ -105,7 +105,7 @@ export default class BLogController {
                     [Op.between]: [dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString(), dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()],
                 };
             }
-            if (query.dateFrom && !query.dateTo) {
+            if ((query.dateFrom && query.dateFrom !== 'null') && !query.dateTo) {
                 condition.createdAt = {
                     [Op.gte]: dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString()
                 };
