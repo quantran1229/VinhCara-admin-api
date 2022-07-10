@@ -53,7 +53,7 @@ export default class ComboController {
                     attributes: ['serial', 'price', 'type', 'status']
                 }],
                 attributes: [
-                    ['productCode', 'id'], 'type', 'productCode', 'productName', 'mainCategory', 'size', 'price', 'mediafiles', 'isShowOnWeb'
+                    ['productCode', 'id'], 'type', 'productCode', 'productName', 'mainCategory', 'size', 'price', 'mediafiles', 'isShowOnWeb', 'slug'
                 ],
             });
             combo.dataValues.jewelleryList = jewelleryList;
@@ -382,7 +382,7 @@ export default class ComboController {
                     attributes: ['serial', 'price', 'type', 'status']
                 }],
                 attributes: [
-                    ['productCode', 'id'], 'type', 'productCode', 'productName', 'mainCategory', 'size', 'price', 'mediafiles', 'isShowOnWeb'
+                    ['productCode', 'id'], 'type', 'productCode', 'productName', 'mainCategory', 'size', 'price', 'mediafiles', 'isShowOnWeb', 'slug'
                 ]
             });
 

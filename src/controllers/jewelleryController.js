@@ -603,7 +603,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], "isShowOnWeb", "createdAt"
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], "isShowOnWeb", "createdAt", 'slug'
                 ],
                 duplicate: false,
                 include: [{
@@ -780,8 +780,7 @@ export default class JewelleryController {
                     [Op.lte]: parseInt(query.priceTo)
                 };
             }
-            if (query.isShowOnWeb !== undefined)
-            {
+            if (query.isShowOnWeb !== undefined) {
                 condition.isShowOnWeb = query.isShowOnWeb
             }
 
@@ -837,7 +836,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], 'slug'
                 ],
                 duplicate: false,
                 include: [{
@@ -860,7 +859,7 @@ export default class JewelleryController {
                 group: ['id', 'newProductInfo.productCode'],
                 order: order,
                 having: havingCondition
-            }, pager)),Jewellery.count({
+            }, pager)), Jewellery.count({
                 include: [{
                     model: NewJewellery,
                     as: 'newProductInfo',
@@ -915,7 +914,7 @@ export default class JewelleryController {
             let conditionJewellery;
 
             if (query.keyword) {
-                let [jewIdList,stockIdList] = await Promise.all([Jewellery.findAll({
+                let [jewIdList, stockIdList] = await Promise.all([Jewellery.findAll({
                     where: {
                         [Op.or]: [Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
                             [Op.iLike]: `%${removeAccent(query.keyword)}%`
@@ -943,12 +942,12 @@ export default class JewelleryController {
                             [Op.iLike]: `%${query.keyword}%`
                         }
                     }, {
-                        productOdooId : {
-                            [Op.in]:  jewIdList.map(e=>e.productOdooId)
+                        productOdooId: {
+                            [Op.in]: jewIdList.map(e => e.productOdooId)
                         }
                     }, {
-                        stockId : {
-                            [Op.in]: stockIdList.map(e=>e.id)
+                        stockId: {
+                            [Op.in]: stockIdList.map(e => e.id)
                         }
                     }]
                 }
@@ -1019,17 +1018,13 @@ export default class JewelleryController {
                 }
             }
 
-            if (query.stockStatus !== undefined)
-            {
-                if (query.stockStatus == 1)
-                {
+            if (query.stockStatus !== undefined) {
+                if (query.stockStatus == 1) {
                     condition.status = 1;
                     condition.type = JewellerySerial.TYPE.REAL
-                }
-                else
-                {
-                    Object.assign(condition,{
-                        [Op.not]:{
+                } else {
+                    Object.assign(condition, {
+                        [Op.not]: {
                             status: 1,
                             type: JewellerySerial.TYPE.REAL
                         }

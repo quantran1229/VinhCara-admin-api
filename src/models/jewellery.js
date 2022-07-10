@@ -151,7 +151,8 @@ module.exports = (sequelize, DataTypes) => {
     isShowOnWeb: DataTypes.BOOLEAN,
     desc: DataTypes.TEXT,
     isHiddenPrice: DataTypes.BOOLEAN,
-    showOnWebTime: DataTypes.DATE
+    showOnWebTime: DataTypes.DATE,
+    slug: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Jewellery',

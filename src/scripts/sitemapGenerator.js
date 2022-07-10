@@ -24,7 +24,7 @@ const generateProductSitemap = async () => {
             ['mainCategory', 'ASC'],
             ['productName', 'ASC']
         ],
-        attributes: ['productCode', 'productName', 'mainCategory', 'type', 'mediafiles'],
+        attributes: ['productCode', 'productName', 'mainCategory', 'type', 'mediafiles', 'slug'],
     });
 
     const listChunk = _.chunk(totalProductList, 200);
@@ -48,7 +48,7 @@ const generateProductSitemap = async () => {
         })
         productList.forEach(e => {
             smStream.write({
-                url: `/${e.type == 1 ? 'san-pham-don' : e.type == 2 ? 'san-pham-doi' : 'san-pham-tuy-bien'}/${e.productCode}`,
+                url: `/${e.type == 1 ? 'san-pham-don' : e.type == 2 ? 'san-pham-doi' : 'san-pham-tuy-bien'}/${e.slug}`,
                 changefreq: 'daily',
                 priority: 1, // A hint to the crawler that it should prioritize this over items less than 0.8
                 img: (e.mediafiles.images || []).map(x => {
