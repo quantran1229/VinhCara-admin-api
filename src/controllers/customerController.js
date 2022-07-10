@@ -219,12 +219,12 @@ export default class CustomerController {
                     }
                 })
                 list.push({
-                    email:{
+                    email: {
                         [Op.iLike]: `%${query.keyword}%`
                     }
                 })
                 condition = {
-                    [Op.or] : list
+                    [Op.or]: list
                 };
             }
             let pager = paging(query);
@@ -255,6 +255,35 @@ export default class CustomerController {
                     ]
                 }]
             }, pager));
+
+            const orderList = await Order.findAll({
+                where: {
+                    customerId: {
+                        [Op.in]: result.rows.map(e => e.id)
+                    }
+                },
+                attributes: ["address", "phone", "customerId"],
+                include: [{
+                    model: Location,
+                    as: 'districtInfo',
+                    attributes: ['id', 'type', 'name']
+                }, {
+                    model: Location,
+                    as: 'cityInfo',
+                    attributes: ['id', 'type', 'name']
+                }, {
+                    model: Location,
+                    as: 'providenceInfo',
+                    attributes: ['id', 'type', 'name']
+                }],
+                order: [
+                    ['createdAt', 'DESC']
+                ]
+            });
+
+            for (let customer of result.rows) {
+                customer.dataValues.lastOrderInfo = orderList.find(x => x.customerId) || null;
+            }
 
             // Return list
             res.setSuccess({

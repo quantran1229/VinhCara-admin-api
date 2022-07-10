@@ -137,7 +137,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'DiamondSerial',
     tableName: 'diamondSerials',
-    timestamps: false,
     defaultScope: {
       attributes: {
         include: [
