@@ -58,7 +58,7 @@ export default class BLogController {
                     ]
                 }
             }
-            if(query.keyword) {
+            if (query.keyword) {
                 let filterKeywords = await Promise.all([
                     Tag.findAll({
                         where: {
@@ -77,10 +77,10 @@ export default class BLogController {
                 condition = {
                     ...condition,
                     [Op.or]: [{
-                        title: {
-                            [Op.iLike]: `%${query.keyword}%`
+                            title: {
+                                [Op.iLike]: `%${query.keyword}%`
+                            },
                         },
-                    },
                         {
                             type: {
                                 [Op.in]: filterKeywords[1].map(item => item.id)
@@ -124,7 +124,7 @@ export default class BLogController {
                 tagCondition.id = query.tagId;
             }
             let order = [
-                ['publishAt', 'DESC']
+                ['createdAt', 'DESC']
             ];
             if (query.orderBy) {
                 switch (query.orderBy) {
@@ -147,12 +147,17 @@ export default class BLogController {
                     order: order,
                     attributes: ['id', 'type', 'title', 'slug', 'status', 'createdBy', 'createdAt', 'updatedAt', 'publishAt', 'seoInfo', 'mediaFiles', 'preview', 'publishAt'],
                     include: [{
-                        model: BlogType,
-                        as: 'blogTypeInfo',
-                        required: Object.keys(categoryCondition).length > 0 ? true : false,
-                        attributes: ['id', 'name', 'slug'],
-                        where: categoryCondition
-                    },
+                            model: BlogType,
+                            as: 'blogTypeInfo',
+                            required: Object.keys(categoryCondition).length > 0 ? true : false,
+                            attributes: ['id', 'name', 'slug'],
+                            where: categoryCondition,
+                            include: [{
+                                model: BlogType,
+                                as: 'parent',
+                                attributes: ['id', 'name', 'slug'],
+                            }]
+                        },
                         {
                             model: Tag,
                             as: 'tags',
@@ -163,7 +168,7 @@ export default class BLogController {
                         {
                             model: User,
                             as: 'creatorInfo',
-                            attributes: ['id','name'],
+                            attributes: ['id', 'name'],
                             required: false
                         }
                     ]
@@ -217,7 +222,12 @@ export default class BLogController {
                 include: [{
                         model: BlogType,
                         as: 'blogTypeInfo',
-                        attributes: ['id', 'name']
+                        attributes: ['id', 'name'],
+                        include: [{
+                            model: BlogType,
+                            as: 'parent',
+                            attributes: ['id', 'name', 'slug'],
+                        }]
                     },
                     {
                         model: Tag,
@@ -227,7 +237,7 @@ export default class BLogController {
                     {
                         model: User,
                         as: 'creatorInfo',
-                        attributes: ['id','name'],
+                        attributes: ['id', 'name'],
                         required: false
                     }
                 ],

@@ -1,4 +1,7 @@
-import {BlogType, Blog} from '../models';
+import {
+    BlogType,
+    Blog
+} from '../models';
 import Logger from '../utils/logger';
 import Response from '../utils/response';
 import Constant from '../constants';
@@ -14,21 +17,53 @@ const res = new Response();
 export default class BLogTypeController {
     static async getListBlogTypes(ctx, next) {
         try {
-            const { popular } = ctx.request.query
+            const {
+                popular
+            } = ctx.request.query
             let objectQuery = popular ? {
                 attributes: {
-                    include: [[Sequelize.fn("COUNT", Sequelize.col("blogs.id")), "countBlogs"]]
+                    include: [
+                        [Sequelize.fn("COUNT", Sequelize.col("blogs.id")), "countBlogs"]
+                    ]
                 },
-                include: [
-                    {
+                include: [{
                         model: Blog,
-                        as:"blogs",
+                        as: "blogs",
                         attributes: []
+                    },
+                    {
+                        model: BlogType,
+                        as: "subs",
+                        attributes: ["name", "slug", "id"]
                     }
                 ],
-                group: ['BlogType.id'],
-                order: [[Sequelize.literal(' "countBlogs" '), 'DESC']]
-            } : {}
+                where: {
+                    parentId: null
+                },
+                group: ['BlogType.id', 'subs.id'],
+                order: [
+                    [Sequelize.literal(' "countBlogs" '), 'DESC']
+                ]
+            } : {
+                include: [{
+                    model: BlogType,
+                    as: "subs",
+                    attributes: ["name", "slug", "id"]
+                }],
+                where: {
+                    parentId: null
+                },
+                order: [
+                    ['id', 'ASC'],
+                    [{
+                            model: BlogType,
+                            as: 'subs'
+                        },
+                        'id',
+                        'ASC'
+                    ]
+                ]
+            }
             const result = await BlogType.findAll(objectQuery)
             if (!result) {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
@@ -73,7 +108,9 @@ export default class BLogTypeController {
     }
     static async putUpdateBlogType(ctx, next) {
         try {
-            const { id } = ctx.request.params
+            const {
+                id
+            } = ctx.request.params
             const {
                 name,
                 slug
@@ -88,10 +125,10 @@ export default class BLogTypeController {
                 res.setError(`BlogType ${id} not found`, Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
-            if(name && name !== blogTypeOld.name) {
+            if (name && name !== blogTypeOld.name) {
                 updateInfo.name = name
             }
-            if(slug && buildSlug(slug) !== blogTypeOld.slug) {
+            if (slug && buildSlug(slug) !== blogTypeOld.slug) {
                 let checkDuplicateSlug = await BlogType.findOne({
                     where: {
                         slug: buildSlug(slug)
@@ -125,7 +162,9 @@ export default class BLogTypeController {
     }
     static async deleteBlogType(ctx, next) {
         try {
-            const { id } = ctx.request.params;
+            const {
+                id
+            } = ctx.request.params;
             let blogType = await BlogType.findOne({
                 where: {
                     id: id
@@ -135,12 +174,14 @@ export default class BLogTypeController {
                 res.setError(`BlogType ${id} not found`, Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
-           await BlogType.destroy({
+            await BlogType.destroy({
                 where: {
                     id: id
                 }
             })
-            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
+            res.setSuccess({
+                deleted: true
+            }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('deleteBlogType ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
