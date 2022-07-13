@@ -20,56 +20,63 @@ export default class BLogTypeController {
             const {
                 popular
             } = ctx.request.query
-            let objectQuery = popular ? {
-                attributes: {
-                    include: [
-                        [Sequelize.fn("COUNT", Sequelize.col("blogs.id")), "countBlogs"]
-                    ]
-                },
-                include: [{
-                        model: Blog,
-                        as: "blogs",
-                        attributes: []
-                    },
-                    {
+            if (popular) {
+                const listType = await Blog.findAll({
+                    attributes: ['type', Sequelize.literal(`COUNT('*')`)],
+                    group: ['type'],
+                    raw: true
+                });
+                let result = await BlogType.findAll({
+                    include: [{
                         model: BlogType,
                         as: "subs",
                         attributes: ["name", "slug", "id"]
+                    }],
+                    where: {
+                        parentId: null
                     }
-                ],
-                where: {
-                    parentId: null
-                },
-                group: ['BlogType.id', 'subs.id'],
-                order: [
-                    [Sequelize.literal(' "countBlogs" '), 'DESC']
-                ]
-            } : {
-                include: [{
-                    model: BlogType,
-                    as: "subs",
-                    attributes: ["name", "slug", "id"]
-                }],
-                where: {
-                    parentId: null
-                },
-                order: [
-                    ['id', 'ASC'],
-                    [{
-                            model: BlogType,
-                            as: 'subs'
-                        },
-                        'id',
-                        'ASC'
+                });
+                result.forEach(e => {
+                    e.dataValues.countBlogs = listType.find(x => x.type == e.id) ? parseInt(listType.find(x => x.type == e.id).count) : 0;
+                    if (e.subs) {
+                        let extraCount = 0;
+                        e.subs.forEach(f => {
+                            f.dataValues.countBlogs = listType.find(x => x.type == f.id) ? parseInt(listType.find(x => x.type == f.id).count) : 0;
+                            extraCount += f.dataValues.countBlogs;
+                        });
+                        e.subs = e.subs.sort((a, b) => {
+                            return - a.dataValues.countBlogs + b.dataValues.countBlogs;
+                        })
+                        e.dataValues.countBlogs += extraCount;
+                    }
+                });
+                result = result.sort((a, b) => {
+                    return - a.dataValues.countBlogs + b.dataValues.countBlogs;
+                })
+                res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
+            } else {
+                const result = await BlogType.findAll({
+                    include: [{
+                        model: BlogType,
+                        as: "subs",
+                        attributes: ["name", "slug", "id"]
+                    }],
+                    where: {
+                        parentId: null
+                    },
+                    order: [
+                        ['id', 'ASC'],
+                        [{
+                                model: BlogType,
+                                as: 'subs'
+                            },
+                            'id',
+                            'ASC'
+                        ]
                     ]
-                ]
+                });
+                res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
             }
-            const result = await BlogType.findAll(objectQuery)
-            if (!result) {
-                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
-                return res.send(ctx);
-            }
-            res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('getListBlogTypes ' + e.message + ' ' + e.stack);
