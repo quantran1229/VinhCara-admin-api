@@ -99,7 +99,12 @@ const generateBlogSitemap = async () => {
         include: [{
             model: BlogType,
             as: 'blogTypeInfo',
-            attributes: ['id', 'name', 'slug']
+            attributes: ['slug'],
+            include: [{
+                model: BlogType,
+                as: 'parent',
+                attributes: ['slug'],
+            }]
         }],
         attributes: ['title', 'slug'],
     });
@@ -120,7 +125,7 @@ const generateBlogSitemap = async () => {
 
         blogList.forEach(e => {
             smStream.write({
-                url: `${e.blogTypeInfo ? e.blogTypeInfo.slug : ""}/${e.slug}`,
+                url: `${e.blogTypeInfo ? (e.blogTypeInfo.parent ? `${e.blogTypeInfo.parent.slug}/${e.blogTypeInfo.slug}` : e.blogTypeInfo.slug) : ""}/${e.slug}`,
                 changefreq: 'weekly',
             })
         })
@@ -136,7 +141,7 @@ const generateBlogSitemap = async () => {
         if (currentSitemap) {
             await currentSitemap.update({
                 sitemap: data,
-                urls: blogList.map(e => `${process.env.WEB_PUBLIC_URL}/${e.blogTypeInfo ? e.blogTypeInfo.slug : ""}/${e.slug}`),
+                urls: blogList.map(e => `${process.env.WEB_PUBLIC_URL}/${e.blogTypeInfo ? (e.blogTypeInfo.parent ? `${e.blogTypeInfo.parent.slug}/${e.blogTypeInfo.slug}` : e.blogTypeInfo.slug) : ""}/${e.slug}`),
                 isAutoGen: true
             })
         } else
@@ -144,7 +149,7 @@ const generateBlogSitemap = async () => {
                 name: name,
                 link: process.env.WEB_PUBLIC_URL + '/sitemap/' + name + '.xml',
                 sitemap: data,
-                urls: blogList.map(e => `${process.env.WEB_PUBLIC_URL}${e.blogTypeInfo ? e.blogTypeInfo.slug : ""}/${e.slug}`),
+                urls: blogList.map(e => `${process.env.WEB_PUBLIC_URL}${e.blogTypeInfo ? (e.blogTypeInfo.parent ? `${e.blogTypeInfo.parent.slug}/${e.blogTypeInfo.slug}` : e.blogTypeInfo.slug) : ""}/${e.slug}`),
                 isAutoGen: true
             });
         totalSitemap.push(currentSitemap.link)
