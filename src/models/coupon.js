@@ -52,7 +52,12 @@ module.exports = (sequelize, DataTypes) => {
                 condition.code = id.toUpperCase();
             }
             return this.findOne({
-                where: condition
+                where: condition,
+                include: [{
+                    model: sequelize.models.User,
+                    as: 'creator',
+                    attributes: ['id','name']
+                }]
             })
         }
 
@@ -67,6 +72,11 @@ module.exports = (sequelize, DataTypes) => {
                         [Op.not]: models.Order.STATUS.CANCEL
                     }
                 },
+            });
+            Coupon.belongsTo(models.User, {
+                foreignKey: 'createdBy',
+                sourceKey: 'id',
+                as: 'creator'
             });
         }
     };
