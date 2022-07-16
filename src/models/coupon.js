@@ -56,7 +56,7 @@ module.exports = (sequelize, DataTypes) => {
                 include: [{
                     model: sequelize.models.User,
                     as: 'creator',
-                    attributes: ['id','name']
+                    attributes: ['id', 'name']
                 }]
             })
         }
@@ -97,7 +97,8 @@ module.exports = (sequelize, DataTypes) => {
         couponType: DataTypes.INTEGER,
         meta: DataTypes.JSONB,
         desc: DataTypes.TEXT,
-        showValue: DataTypes.STRING
+        showValue: DataTypes.STRING,
+        giftText: DataTypes.STRING
     }, {
         sequelize,
         tableName: 'coupons',

@@ -112,7 +112,8 @@ export default class CouponController {
                 minimumRequirement,
                 limit,
                 desc,
-                showValue
+                showValue,
+                giftText
             } = ctx.request.body;
 
             // validate
@@ -177,7 +178,8 @@ export default class CouponController {
                 desc,
                 showValue,
                 meta: {},
-                count: 0
+                count: 0,
+                giftText
             });
 
             res.setSuccess(coupon, Constant.instance.HTTP_CODE.Success);
@@ -214,7 +216,8 @@ export default class CouponController {
                 minimumRequirement,
                 limit,
                 desc,
-                showValue
+                showValue,
+                giftText
             } = ctx.request.body;
 
             let updateInfo = {}
@@ -283,6 +286,10 @@ export default class CouponController {
             }
             if (showValue && showValue != respCoupon.showValue) {
                 updateInfo.showValue = showValue;
+            }
+
+            if (giftText != undefined && giftText != respCoupon.giftText) {
+                updateInfo.giftText = giftText;
             }
 
             let coupon = await respCoupon.update(updateInfo);
