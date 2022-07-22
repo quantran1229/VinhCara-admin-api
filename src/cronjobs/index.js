@@ -140,7 +140,7 @@ recalculatePrice.start();
 
 // Activate Coupon
 var activateCoupon = new CronJob('0 * * * * *', async function () {
-    Logger.info("Start check for Coupon to start");
+    Logger.info("Start check for activate Coupon");
     let coupons = await Coupon.findAll({
         where: {
             status: Coupon.STATUS.INACTIVE,
@@ -180,14 +180,15 @@ activateCoupon.start();
 
 // Deactivate Coupon
 var deactivateCoupon = new CronJob('0 * * * * *', async function () {
-    Logger.info("Start check for Coupon to end");
+    Logger.info("Start check for deactivated Coupon");
     let coupons = await Coupon.findAll({
         where: {
             status: Coupon.STATUS.ACTIVE,
             endTime: {
                 [Op.lte]: dayjs().add(-1, 's').toISOString()
             }
-        }
+        },
+        logging: true
     });
     if (coupons.length > 0) {
         let transaction;
