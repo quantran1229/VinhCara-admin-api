@@ -160,6 +160,30 @@ export default class CouponController {
             if (!limit) {
                 limit = 0;
             }
+            if (discountPercent?.value && discountPrice?.value)
+            {
+                res.setError(`Can't set discounrPercent & discountPrice for all order at same time`, Constant.instance.HTTP_CODE.BadRequest, [{
+                    field: 'discountPercent && discountPrice',
+                    code: 'conflicted'
+                }]);
+                return res.send(ctx);
+            }
+            if (discountPercent && discountPercent.value !== undefined && (discountPercent.jewellery !== undefined || discountPercent.diamond !== undefined))
+            {
+                res.setError(`Can't set discounrPercent for all order and sepereate at same time`, Constant.instance.HTTP_CODE.BadRequest, [{
+                    field: 'discountPercent',
+                    code: 'conflicted'
+                }]);
+                return res.send(ctx);
+            }
+            if (discountPrice && discountPrice.value !== undefined && (discountPrice.jewellery !== undefined || discountPrice.diamond !== undefined))
+            {
+                res.setError(`Can't set discounrPercent for all order and sepereate at same time`, Constant.instance.HTTP_CODE.BadRequest, [{
+                    field: 'discountPrice',
+                    code: 'conflicted'
+                }]);
+                return res.send(ctx);
+            }
             let coupon = await Coupon.create({
                 code,
                 type,

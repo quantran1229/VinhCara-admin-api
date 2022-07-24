@@ -98,7 +98,13 @@ module.exports = (sequelize, DataTypes) => {
         meta: DataTypes.JSONB,
         desc: DataTypes.TEXT,
         showValue: DataTypes.STRING,
-        giftText: DataTypes.STRING
+        giftText: DataTypes.STRING,
+        isTotalOrder: {
+            type: DataTypes.VIRTUAL,
+            get() {
+                return this.discountPrice?.value !== undefined || this.discountPercent?.value !== undefined
+            }
+        }
     }, {
         sequelize,
         tableName: 'coupons',
