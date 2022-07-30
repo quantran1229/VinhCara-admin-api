@@ -38,7 +38,7 @@ router.put('/blogs/:id',validate({
             type: 'array',
             required: false,
             itemType: 'number',
-            min: 1
+            min: 0
         }
     }
 }), jwtValidate, BlogController.putUpdateBlog)
