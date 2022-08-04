@@ -102,7 +102,7 @@ module.exports = (sequelize, DataTypes) => {
         isTotalOrder: {
             type: DataTypes.VIRTUAL,
             get() {
-                return this.discountPrice?.value !== undefined || this.discountPercent?.value !== undefined
+                return this.discountPrice?.value !== undefined || this.discountPercent?.value !== undefined || (this.minimumRequirement?.value !== undefined && this.type === Coupon.COUPON_TYPE.GIFT)
             }
         }
     }, {
