@@ -1,0 +1,30 @@
+name: CICD deploy to Production server
+
+on:
+  push:
+    branches: [ master ]
+    
+jobs:
+  build-and-deploy-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+      
+      - name: Installing dependency & Linting & Build babel
+        run: npm i && npm run lint:fix && npm run build && cp .env_prod .env
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        id: buildx
+
+      - name: Docker login
+        run: docker login registry.quan1229.com -u root -p 123456a@
+
+      - name: Build Docker image
+        run: bash deploy.sh prod registry.quan1229.com
