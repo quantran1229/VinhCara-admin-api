@@ -16,7 +16,7 @@ export default class RedirectController {
             const {
                 from,
                 to
-             } = ctx.request.body;
+            } = ctx.request.body;
             const redirect = await Redirect.create({
                 id: uuid(),
                 from,
@@ -37,8 +37,7 @@ export default class RedirectController {
             const redirect = await Redirect.findOne({
                 id: id
             });
-            if (!redirect)
-            {
+            if (!redirect) {
                 res.setError('Not found', Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
@@ -67,7 +66,10 @@ export default class RedirectController {
                 }
             }
             const redirects = await Redirect.findAll({
-                where: condition
+                where: condition,
+                order: [
+                    ['createdAt', 'DESC']
+                ]
             });
 
             // Return list
@@ -86,8 +88,7 @@ export default class RedirectController {
             let redirect = await Redirect.findOne({
                 id: id
             });
-            if (!redirect)
-            {
+            if (!redirect) {
                 res.setError('Not found', Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
@@ -115,8 +116,7 @@ export default class RedirectController {
             const redirect = await Redirect.findOne({
                 id: id
             });
-            if (!redirect)
-            {
+            if (!redirect) {
                 res.setError('Not found', Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }

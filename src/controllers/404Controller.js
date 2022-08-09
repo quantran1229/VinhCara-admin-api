@@ -19,7 +19,8 @@ export default class NotFoundController {
                 }
             }
             const notFoundLogs = await NotFoundLog.findAll({
-                where: condition
+                where: condition,
+                order: [['createdAt','DESC']]
             });
 
             // Return list

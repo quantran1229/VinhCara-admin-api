@@ -1,0 +1,39 @@
+name: CICD deploy to Develop server
+
+on:
+  push:
+    branches: [ dev ]
+    
+jobs:
+  build-and-deploy-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v2
+
+      - name: Install Node.js, NPM and Yarn
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+      
+      - name: Installing dependency & Linting & Build babel
+        run: npm i && npm run build && cp .env_dev .env
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+        id: buildx
+
+      - name: Docker login
+        run: docker login registry.quan1229.com -u root -p 123456a@
+
+      - name: Build Docker image
+        run: bash deploy.sh dev registry.quan1229.com
+
+      - name: Restart docker
+        uses: garygrossgarten/github-action-ssh@release
+        with:
+          command: cd /home/backend/vcr/admin && docker compose pull && docker compose down && docker compose up -d
+          port: ${{secrets.SERVER_DEV_PORT}}
+          host: ${{secrets.SERVER_DEV_HOST}}
+          username: ${{ secrets.SERVER_DEV_USER }}
+          password: ${{ secrets.SERVER_DEV_PASSWORD }}
