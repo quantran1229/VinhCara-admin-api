@@ -16,6 +16,8 @@ import {
 import {
     generateSitemap
 } from '../scripts/sitemapGenerator';
+import fetch from 'node-fetch'
+import Constant from '../constants';
 // ALL CRON JOB HERE
 
 //Check 30 mins after VNPay
@@ -256,3 +258,11 @@ var regenerateSitemap = new CronJob('* */20 * * * *', async function () {
 });
 
 regenerateSitemap.start();
+
+// Ping to crawler
+//Sitemap generation
+var pingCrawler = new CronJob('0 0 */6 * * *', async function () {
+    await Promise.all([fetch(`https://www.google.com/ping?sitemap=${Constant.instance.WEB_PUBLIC_URL}/sitemap/sitemap.xml`)]);
+});
+
+pingCrawler.start();
