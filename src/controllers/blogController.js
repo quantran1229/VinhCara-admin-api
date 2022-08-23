@@ -26,9 +26,6 @@ import dayjs from 'dayjs'
 import {
     isEqual
 } from 'lodash'
-import {
-    request
-} from "chai";
 
 const res = new Response();
 
@@ -58,42 +55,64 @@ export default class BLogController {
                     ]
                 }
             }
+            if (query.name) {
+                query.keyword = query.name;
+            }
             if (query.keyword) {
                 let filterKeywords = await Promise.all([
                     Tag.findAll({
                         where: {
-                            title: {
-                                [Op.iLike]: `%${query.keyword}%`
-                            }
-                        }
+                            title: Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('title')), {
+                                [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                            })
+                        },
+                        include: [{
+                            model: BlogToTag,
+                            as: 'listblogToTags'
+                        }]
                     }), BlogType.findAll({
                         where: {
-                            name: {
-                                [Op.iLike]: `%${query.keyword}%`
-                            }
+                            name: Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('name')), {
+                                [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                            })
                         }
                     })
                 ])
+                const orOperation = [{
+                    titleCheck: Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.literal('"Blog"."title"')),{
+                        [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                    })
+                }, {
+                    slugCheck: Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.literal('"Blog"."slug"')),{
+                        [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                    })
+                }]
+                if (filterKeywords[0] && filterKeywords[0].length > 0) {
+                    orOperation.push({
+                        id: {
+                            [Op.in]: [... new Set(filterKeywords[0].reduce((p,c)=>{
+                                return p.concat(c.listblogToTags.map(e=>e.tagId))
+                            },[]))]
+                        }
+                    })
+                }
+                if (filterKeywords[1] && filterKeywords[1].length > 0) {
+                    orOperation.push({
+                        type: {
+                            [Op.in]: filterKeywords[1].map(e=>e.id)
+                        }
+                    })
+                }
                 condition = {
                     ...condition,
-                    [Op.or]: [{
-                            title: {
-                                [Op.iLike]: `%${query.keyword}%`
-                            },
-                        },
-                        {
-                            type: {
-                                [Op.in]: filterKeywords[1].map(item => item.id)
-                            }
-                        }
-                    ]
+                    [Op.or]: orOperation
                 }
             }
-            if (query.name) {
-                condition.title = {
-                    [Op.iLike]: `%${query.name}%`
-                }
-            }
+            // if (query.name) {
+            //     condition.title = {
+            //         [Op.iLike]: `%${query.name}%`
+            //     }
+            // }
             if (query.type) {
                 condition.type = query.type;
             }
