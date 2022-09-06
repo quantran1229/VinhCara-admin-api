@@ -13,6 +13,7 @@
   "dependencies": {
     "@koa/cors": "^3.1.0",
     "@koa/multer": "^3.0.0",
+    "axios": "^0.27.2",
     "bcrypt": "^5.0.1",
     "bee-queue": "^1.4.0",
     "cron": "^1.8.2",
