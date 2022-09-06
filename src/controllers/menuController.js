@@ -115,17 +115,17 @@ export default class MenuController {
                 updateInfo.order = order;
             }
             if (link && link != Menu.link) {
-                let menuLink = await Menu.findOne({
-                    where: {
-                        link: link
-                    }
-                });
-                if (menuLink) {
-                    res.setError(`Duplicated link`, Constant.instance.HTTP_CODE.Conflict, {
-                        field: 'link',
-                    }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
-                    return res.send(ctx);
-                }
+                // let menuLink = await Menu.findOne({
+                //     where: {
+                //         link: link
+                //     }
+                // });
+                // if (menuLink) {
+                //     res.setError(`Duplicated link`, Constant.instance.HTTP_CODE.Conflict, {
+                //         field: 'link',
+                //     }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+                //     return res.send(ctx);
+                // }
                 updateInfo.link = link;
             }
             if (mediafile && mediafile != Menu.mediafile) {
@@ -164,17 +164,17 @@ export default class MenuController {
                 buttonText,
                 order
             } = ctx.request.body;
-            let menuLink = await Menu.findOne({
-                where: {
-                    link: link
-                }
-            });
-            if (menuLink) {
-                res.setError(`Duplicated link`, Constant.instance.HTTP_CODE.Conflict, {
-                    field: 'link',
-                }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
-                return res.send(ctx);
-            }
+            // let menuLink = await Menu.findOne({
+            //     where: {
+            //         link: link
+            //     }
+            // });
+            // if (menuLink) {
+            //     res.setError(`Duplicated link`, Constant.instance.HTTP_CODE.Conflict, {
+            //         field: 'link',
+            //     }, Constant.instance.ERROR_CODE.User_DUPLICATE_EMAIL);
+            //     return res.send(ctx);
+            // }
             if(parentId) {
                 let menuParentId = await Menu.findOne({
                     where: {

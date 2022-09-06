@@ -16,7 +16,7 @@ import {
 import {
     generateSitemap
 } from '../scripts/sitemapGenerator';
-import fetch from 'node-fetch'
+import axios from 'axios'
 import Constant from '../constants';
 // ALL CRON JOB HERE
 
@@ -190,7 +190,6 @@ var deactivateCoupon = new CronJob('0 * * * * *', async function () {
                 [Op.lte]: dayjs().add(-1, 's').toISOString()
             }
         },
-        logging: true
     });
     if (coupons.length > 0) {
         let transaction;
@@ -261,8 +260,8 @@ regenerateSitemap.start();
 
 // Ping to crawler
 //Sitemap generation
-var pingCrawler = new CronJob('0 0 */6 * * *', async function () {
-    await Promise.all([fetch(`https://www.google.com/ping?sitemap=${Constant.instance.WEB_PUBLIC_URL}/sitemap/sitemap.xml`)]);
+var pingCrawler = new CronJob('0 0 */4 * * *', async function () {
+    await Promise.all([axios.get(`https://www.google.com/ping?sitemap=${Constant.instance.WEB_PUBLIC_URL}/sitemap/sitemap.xml`)]);
 });
 
 pingCrawler.start();
