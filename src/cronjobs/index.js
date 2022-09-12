@@ -260,7 +260,7 @@ regenerateSitemap.start();
 
 // Ping to crawler
 //Sitemap generation
-var pingCrawler = new CronJob('0 0 */4 * * *', async function () {
+var pingCrawler = new CronJob('0 0 */6 * * *', async function () {
     await Promise.all([axios.get(`https://www.google.com/ping?sitemap=${Constant.instance.WEB_PUBLIC_URL}/sitemap/sitemap.xml`)]);
 });
 
