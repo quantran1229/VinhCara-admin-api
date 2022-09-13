@@ -43,7 +43,8 @@ module.exports = (sequelize, DataTypes) => {
         publishAt: DataTypes.DATE,
         seoInfo: DataTypes.JSONB,
         mediaFiles: DataTypes.JSONB,
-        preview: DataTypes.STRING
+        preview: DataTypes.STRING,
+        bannerInfo: DataTypes.JSONB
     }, {
         sequelize,
         tableName: 'blogs',

@@ -285,7 +285,8 @@ export default class BLogController {
                 seoInfo,
                 mediaFiles,
                 preview,
-                tagIds
+                tagIds,
+                bannerInfo
             } = ctx.request.body;
 
             let user = null;
@@ -338,6 +339,7 @@ export default class BLogController {
                 mediaFiles,
                 preview,
                 createdBy: ctx.state.user.id,
+                bannerInfo
             });
             if (blog) {
                 let listBlogToTags = await Promise.all(tagIds.map(async (tagId) => {
@@ -378,7 +380,8 @@ export default class BLogController {
                 publishAt,
                 mediaFiles,
                 preview,
-                tagIds
+                tagIds,
+                bannerInfo
             } = ctx.request.body || {};
             //const t = await db.sequelize.transaction();
             let blogOld = await Blog.findOne({
@@ -455,6 +458,9 @@ export default class BLogController {
             }
             if (mediaFiles && !isEqual(mediaFiles, blogOld.mediaFiles)) {
                 updateInfo.mediaFiles = mediaFiles
+            }
+            if (bannerInfo && !isEqual(bannerInfo, blogOld.bannerInfo)) {
+                updateInfo.bannerInfo = bannerInfo
             }
             await Blog.update(updateInfo, {
                 where: {
