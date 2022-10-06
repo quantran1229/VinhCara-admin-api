@@ -17,7 +17,8 @@ module.exports = (sequelize, DataTypes) => {
   Membership.init({
     name: DataTypes.STRING,
     point: DataTypes.INTEGER,
-    percentDiscount: DataTypes.INTEGER
+    percentDiscount: DataTypes.DOUBLE,
+    percentDiaDiscount: DataTypes.DOUBLE
   }, {
     sequelize,
     modelName: 'Membership',
