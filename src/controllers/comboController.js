@@ -29,29 +29,6 @@ export default class ComboController {
     // Check health, return memory usage + uptime + mediafile disk size
     static getComboInfo = async (ctx, next) => {
         try {
-            let include = [{
-                model: JewellerySerial,
-                as: 'serialList',
-                attributes: ['serial', 'size', 'price', 'type']
-            }];
-            // get current user
-            let user = null;
-            if (ctx.state.user) {
-                user = ctx.state.user;
-                include.push({
-                    model: WishlistLog,
-                    required: false,
-                    where: {
-                        customerId: user.id,
-                        isCurrent: true,
-                        status: WishlistLog.STATUS.LIKE,
-                    },
-                    as: 'wishlistInfo',
-                    attributes: [
-                        ['status', 'isLiked']
-                    ]
-                })
-            }
             const id = ctx.request.params.id;
             let combo = await Combo.getInfo(id, true);
 
@@ -65,28 +42,20 @@ export default class ComboController {
                         [Op.in]: combo.productCode
                     }
                 },
+                include: [{
+                    model: JewellerySerial,
+                    as: 'serialList',
+                    required: false,
+                    where: {
+                        status: 1,
+                        type: 1
+                    },
+                    attributes: ['serial', 'price', 'type', 'status']
+                }],
                 attributes: [
-                    ['productCode', 'id'], 'type', 'productCode', 'productName', 'mainCategory', 'size', 'price', 'mediafiles'
+                    ['productCode', 'id'], 'type', 'productCode', 'productName', 'mainCategory', 'size', 'price', 'mediafiles', 'isShowOnWeb', 'slug'
                 ],
-                include: include,
-                order: [
-                    [{
-                        model: JewellerySerial,
-                        as: 'serialList',
-                    }, 'type', 'ASC']
-                ]
             });
-            for (let jew of jewelleryList) {
-                let serialList = jew.serialList.reduce((list, e) => {
-                    if (list.find(x => x.size == e.size)) {
-                        return list;
-                    }
-                    if (e.size == jew.size) e.dataValues.isDefault = true;
-                    list.push(e);
-                    return list;
-                }, [])
-                jew.serialList = serialList;
-            }
             combo.dataValues.jewelleryList = jewelleryList;
             res.setSuccess(combo, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
@@ -179,6 +148,16 @@ export default class ComboController {
                 bannerInfo,
                 desc
             } = ctx.request.body;
+            let checkCombo = await Combo.findOne({
+                where:{
+                    link : link
+                }
+            });
+            if (checkCombo)
+            {
+                res.setError("Conflict link", Constant.instance.HTTP_CODE.Conflict);
+                return res.send(ctx);
+            }
             let combo = await Combo.create({
                 link,
                 mediafiles,
@@ -262,7 +241,9 @@ export default class ComboController {
 
     static putUpdateSeoInfoCombo = async (ctx, next) => {
         try {
-            const { id } = ctx.request.params
+            const {
+                id
+            } = ctx.request.params
             const {
                 SEOInfo
             } = ctx.request.body;
@@ -284,7 +265,7 @@ export default class ComboController {
             res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
-            Logger.error('putUpdateSeoInfoCombo ' + e.message + ' ' + e.stack +' '+ (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            Logger.error('putUpdateSeoInfoCombo ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }
@@ -341,7 +322,7 @@ export default class ComboController {
                 productCode.splice(index, 1)
             }
             respCombo = await respCombo.update({
-                productCode: [... new Set(productCode)]
+                productCode: [...new Set(productCode)]
             });
             // Return info
             res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
@@ -383,6 +364,29 @@ export default class ComboController {
             updateInfo.productCode = [...new Set(productCode)];
 
             respCombo = await respCombo.update(updateInfo);
+
+            let jewelleryList = await Jewellery.findAll({
+                where: {
+                    productCode: {
+                        [Op.in]: respCombo.productCode
+                    }
+                },
+                include: [{
+                    model: JewellerySerial,
+                    as: 'serialList',
+                    required: false,
+                    where: {
+                        status: 1,
+                        type: 1
+                    },
+                    attributes: ['serial', 'price', 'type', 'status']
+                }],
+                attributes: [
+                    ['productCode', 'id'], 'type', 'productCode', 'productName', 'mainCategory', 'size', 'price', 'mediafiles', 'isShowOnWeb', 'slug'
+                ]
+            });
+
+            respCombo.dataValues.jewelleryList = jewelleryList;
             // Return info
             res.setSuccess(respCombo, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);

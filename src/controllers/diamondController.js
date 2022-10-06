@@ -41,6 +41,7 @@ export default class DiamondsController {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
+
             // Return info
             res.setSuccess(diamond, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
@@ -137,12 +138,20 @@ export default class DiamondsController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             if (query.keyword) {
-                query.keyword = removeAccent(query.keyword)
-                condition.productName = Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
-                    [Op.iLike]: `%${query.keyword}%`
-                });
+                const list = [];
+                list.push(Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
+                    [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                }))
+                list.push({
+                    productCode: {
+                        [Op.iLike]: `%${query.keyword}%`
+                    }
+                })
+                condition = {
+                    [Op.or]: list
+                }
             }
             let order = [];
             if (query.orderBy) {
@@ -324,12 +333,12 @@ export default class DiamondsController {
             const pager = paging(query);
             let result = await Promise.all([Diamond.count({
                 where: condition,
-            }),Diamond.findAll(Object.assign({
+            }), Diamond.findAll(Object.assign({
                 where: condition,
                 order: order,
                 duplicate: false,
                 attributes: [
-                    ['productCode', 'id'], 'productCode', 'productName', 'mediafiles', 'price', 'shape', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productCode', 'productName', 'mediafiles', 'price', 'shape', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], 'createdAt'
                 ],
                 include: [{
                     model: DiamondSerial,
@@ -360,7 +369,7 @@ export default class DiamondsController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             let order = [];
             if (query.orderBy) {
                 switch (query.orderBy) {
@@ -437,6 +446,41 @@ export default class DiamondsController {
                 }
             }
             order.push(['type', 'ASC'])
+            if (query.keyword) {
+                let [diamondIdList, stockIdList] = await Promise.all([Diamond.findAll({
+                    where: {
+                        [Op.or]: [Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
+                            [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                        }), {
+                            productCode: {
+                                [Op.iLike]: `%${query.keyword}%`
+                            }
+                        }]
+                    },
+                    attributes: ["productOdooId"]
+                }), Stock.findAll({
+                    where: {
+                        name: {
+                            [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                        }
+                    }
+                })]);
+                condition = {
+                    [Op.or]: [{
+                        serial: {
+                            [Op.iLike]: `%${query.keyword}%`
+                        }
+                    }, {
+                        productOdooId : {
+                            [Op.in]:  diamondIdList.map(e=>e.productOdooId)
+                        }
+                    }, {
+                        stockId: {
+                            [Op.in]:  stockIdList.map(e=>e.id)
+                        }
+                    }]
+                }
+            }
 
             if (query.priceFrom != null && query.priceTo != null) {
                 condition.price = {
@@ -661,6 +705,25 @@ export default class DiamondsController {
             if (!diamondSerial) {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
             }
+
+            let jewelleryCondition = {
+                type: {
+                    [Op.not]: Jewellery.TYPE.DOUBLE // K recomend Sản phẩm đôi
+                },
+                shape: diamondSerial.shape,
+                diamondSize: {
+                    [Op.between]: [parseFloat(Math.floor(diamondSerial.size * 10) / 10) - 0.5, parseFloat(Math.floor(diamondSerial.size * 10) / 10) + 0.5]
+                },
+                hasDiamond: {
+                    [Op.gt]: 0
+                }
+            };
+            let jewelleryList = await Jewellery.findAll({
+                where: jewelleryCondition,
+                attributes: ['productCode', 'productName', 'type', 'mainCategory', 'slug']
+            });
+
+            diamondSerial.dataValues.jewelleryList = jewelleryList;
             res.setSuccess(diamondSerial, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {

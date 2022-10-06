@@ -18,7 +18,8 @@ import db, {
     Jewellery,
     DiamondSerial,
     Diamond,
-    SavedAddress
+    SavedAddress,
+    Coupon
 } from '../models';
 import {
     paging
@@ -61,6 +62,11 @@ export default class CustomerController {
                             as: 'withDiamond',
                             attributes: ['id', 'type', 'quantity', 'gender', 'size', 'lettering', 'price', 'itemInfo'],
                         }]
+                    }, {
+                        required: false,
+                        as: 'couponInfo',
+                        model: Coupon,
+                        attributes: ['id', 'code']
                     }],
                 }, {
                     model: WishlistLog,
@@ -113,7 +119,7 @@ export default class CustomerController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             if (query.phone) {
                 condition.phone = {
                     [Op.like]: `%${query.phone}%`
@@ -190,10 +196,41 @@ export default class CustomerController {
                         break;
                 }
             }
+            if (query.keyword) {
+                const list = []
+                if (!isNaN(query.keyword)) {
+                    list.push({
+                        phone: {
+                            [Op.like]: `%${query.keyword}%`
+                        }
+                    })
+                    list.push({
+                        id: query.keyword
+                    })
+                }
+                list.push(
+                    Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('"Customer"."name"')), {
+                        [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                    })
+                )
+                list.push({
+                    code: {
+                        [Op.iLike]: `%${query.keyword}%`
+                    }
+                })
+                list.push({
+                    email: {
+                        [Op.iLike]: `%${query.keyword}%`
+                    }
+                })
+                condition = {
+                    [Op.or]: list
+                };
+            }
             let pager = paging(query);
             const result = await Customer.findAndCountAll(Object.assign({
                 where: condition,
-                attributes: ['id', 'code', 'name', 'email', 'phone', 'status', 'createdAt', 'updatedAt'],
+                attributes: ['id', 'code', 'name', 'email', 'phone', 'status', 'avatar', 'createdAt', 'updatedAt'],
                 order: order,
                 include: [{
                     model: SavedAddress,
@@ -218,6 +255,35 @@ export default class CustomerController {
                     ]
                 }]
             }, pager));
+
+            const orderList = await Order.findAll({
+                where: {
+                    customerId: {
+                        [Op.in]: result.rows.map(e => e.id)
+                    }
+                },
+                attributes: ["address", "phone", "customerId"],
+                include: [{
+                    model: Location,
+                    as: 'districtInfo',
+                    attributes: ['id', 'type', 'name']
+                }, {
+                    model: Location,
+                    as: 'cityInfo',
+                    attributes: ['id', 'type', 'name']
+                }, {
+                    model: Location,
+                    as: 'providenceInfo',
+                    attributes: ['id', 'type', 'name']
+                }],
+                order: [
+                    ['createdAt', 'DESC']
+                ]
+            });
+
+            for (let customer of result.rows) {
+                customer.dataValues.lastOrderInfo = orderList.find(x => x.customerId) || null;
+            }
 
             // Return list
             res.setSuccess({

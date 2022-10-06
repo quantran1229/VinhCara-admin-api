@@ -23,6 +23,6 @@ REDIS_USER=
 REDIS_PASSWORD=
 
 QUEUE_MAIL_NAME=vcr-mail
-WEB_PUBLIC_URL=https://vcr.quan1229.com
+WEB_PUBLIC_URL=https://vcr.test.com
 
 API_URL=0.0.0.0:3000

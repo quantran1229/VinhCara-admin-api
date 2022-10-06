@@ -19,7 +19,13 @@ module.exports = (sequelize, DataTypes) => {
         model: sequelize.models.JewellerySerial,
         as: 'serialList',
         required: false
-      }];
+      },
+      {
+        model: sequelize.models.NewJewellery,
+        as: 'newProductInfo',
+        attributes: ['order']
+    }
+    ];
       return this.findOne({
         where: {
           productCode: id
@@ -72,7 +78,7 @@ module.exports = (sequelize, DataTypes) => {
           ['productCode', 'ASC']
         ],
         attributes: [
-          ['productCode', 'id'], 'productCode', 'mediafiles', 'productName', 'mainCategory', 'type', 'productCategory', 'price', 'totalViews', 'totalOrders'
+          ['productCode', 'id'], 'productCode', 'mediafiles', 'productName', 'mainCategory', 'type', 'productCategory', 'price', 'totalViews', 'totalOrders', 'createdAt'
         ],
         include: includeWishlist ? includeWishlist : null
       }, pager))]);
@@ -107,6 +113,12 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'name',
         as: 'sizeInfo'
       })
+
+      Jewellery.belongsTo(models.Category, {
+        foreignKey: 'mainCategory',
+        targetKey: 'name',
+        as: 'categoryInfo'
+      })
     }
   };
   Jewellery.init({
@@ -137,7 +149,10 @@ module.exports = (sequelize, DataTypes) => {
     type: DataTypes.INTEGER,
     shape: DataTypes.STRING,
     isShowOnWeb: DataTypes.BOOLEAN,
-    desc: DataTypes.TEXT
+    desc: DataTypes.TEXT,
+    isHiddenPrice: DataTypes.BOOLEAN,
+    showOnWebTime: DataTypes.DATE,
+    slug: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'Jewellery',

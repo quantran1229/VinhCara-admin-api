@@ -44,11 +44,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Page',
     tableName: 'pages',
-    defaultScope: {
-      where: {
-        status: Page.STATUS.ACTIVE
-      }
-    }
   });
   return Page;
 };

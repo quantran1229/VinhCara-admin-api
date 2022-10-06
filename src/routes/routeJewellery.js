@@ -10,6 +10,10 @@ import {
 const router = new Router();
 
 // Get jewellery list
+router.get('/jewellery/export', jwtValidate, JewelleryController.exportJewelleryList);
+
+router.post('/jewellery/import', jwtValidate, JewelleryController.importJewelleryList);
+
 router.get('/jewellery', jwtValidate, JewelleryController.getJewelleryList);
 
 // // Get new jewellery list
@@ -106,7 +110,7 @@ router.post('/jewellery-serials', jwtValidate, validate({
 router.post('/new-jewellery', jwtValidate, validate({
     body: {
         list: {
-            type: ' array',
+            type: 'array',
             required: true,
             itemType: 'object',
             rule: {
@@ -120,4 +124,7 @@ router.post('/new-jewellery', jwtValidate, validate({
 router.get('/new-jewellery', jwtValidate, JewelleryController.getNewJewellery);
 
 router.delete('/new-jewellery/:id', jwtValidate, JewelleryController.deleteNewProductOrder);
+
+router.get('/new-jewellery-order', jwtValidate, JewelleryController.getListNewJewelleryOrder);
+
 export default router;

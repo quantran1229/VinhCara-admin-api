@@ -73,8 +73,19 @@ export default class CouponController {
                 condition.status = query.status;
             }
             const pager = paging(query);
-            const result = await Coupon.getList(condition, pager);
-            res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
+            const [result,totalStatusCount] = await Promise.all([Coupon.getList(condition, pager),
+            Coupon.findAll({
+                attributes: [[Sequelize.literal('COUNT(*)'),"count"], "status"],
+                group: ['status']
+            })]);
+            const extraCount = {
+                extraCount: {
+                    totalInactive: parseInt(totalStatusCount.find(e=> e.status == Coupon.STATUS.INACTIVE)?.dataValues.count || 0),
+                    totalActive: parseInt(totalStatusCount.find(e=> e.status == Coupon.STATUS.ACTIVE)?.dataValues.count || 0),
+                    totalStop: parseInt(totalStatusCount.find(e=> e.status == Coupon.STATUS.FINISHED)?.dataValues.count || 0) + parseInt(totalStatusCount.find(e=> e.status == Coupon.STATUS.STOP)?.dataValues.count || 0) ,
+                }
+            }
+            res.setSuccess(Object.assign(result,extraCount), Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('getListCoupon ' + e.message + ' ' + e.stack);
@@ -101,7 +112,8 @@ export default class CouponController {
                 minimumRequirement,
                 limit,
                 desc,
-                showValue
+                showValue,
+                giftText
             } = ctx.request.body;
 
             // validate
@@ -148,6 +160,30 @@ export default class CouponController {
             if (!limit) {
                 limit = 0;
             }
+            if (discountPercent?.value && discountPrice?.value)
+            {
+                res.setError(`Can't set discounrPercent & discountPrice for all order at same time`, Constant.instance.HTTP_CODE.BadRequest, [{
+                    field: 'discountPercent && discountPrice',
+                    code: 'conflicted'
+                }]);
+                return res.send(ctx);
+            }
+            if (discountPercent && discountPercent.value !== undefined && (discountPercent.jewellery !== undefined || discountPercent.diamond !== undefined))
+            {
+                res.setError(`Can't set discounrPercent for all order and sepereate at same time`, Constant.instance.HTTP_CODE.BadRequest, [{
+                    field: 'discountPercent',
+                    code: 'conflicted'
+                }]);
+                return res.send(ctx);
+            }
+            if (discountPrice && discountPrice.value !== undefined && (discountPrice.jewellery !== undefined || discountPrice.diamond !== undefined))
+            {
+                res.setError(`Can't set discounrPercent for all order and sepereate at same time`, Constant.instance.HTTP_CODE.BadRequest, [{
+                    field: 'discountPrice',
+                    code: 'conflicted'
+                }]);
+                return res.send(ctx);
+            }
             let coupon = await Coupon.create({
                 code,
                 type,
@@ -166,7 +202,8 @@ export default class CouponController {
                 desc,
                 showValue,
                 meta: {},
-                count: 0
+                count: 0,
+                giftText
             });
 
             res.setSuccess(coupon, Constant.instance.HTTP_CODE.Success);
@@ -203,7 +240,8 @@ export default class CouponController {
                 minimumRequirement,
                 limit,
                 desc,
-                showValue
+                showValue,
+                giftText
             } = ctx.request.body;
 
             let updateInfo = {}
@@ -272,6 +310,10 @@ export default class CouponController {
             }
             if (showValue && showValue != respCoupon.showValue) {
                 updateInfo.showValue = showValue;
+            }
+
+            if (giftText != undefined && giftText != respCoupon.giftText) {
+                updateInfo.giftText = giftText;
             }
 
             let coupon = await respCoupon.update(updateInfo);

@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
         order: orderBy || [
           ['createdAt', 'DESC']
         ],
-        attributes: ['id', 'name', 'mediafiles', 'link', [Sequelize.fn('array_length', Sequelize.col("productCode"), 1), 'totalProduct']],
+        attributes: ['id', 'name', 'mediafiles', 'link','bannerInfo', [Sequelize.fn('array_length', Sequelize.col("productCode"), 1), 'totalProduct'],'createdAt'],
       }, pager));
       return {
         count: result.count,
@@ -68,11 +68,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Collection',
     tableName: 'collections',
-    defaultScope: {
-      where: {
-        status: collections.STATUS.ACTIVE
-      }
-    }
   });
   return collections;
 };

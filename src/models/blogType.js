@@ -11,6 +11,16 @@ module.exports = (sequelize, DataTypes) => {
                 sourceKey: 'id',
                 as: 'blogs'
             })
+            BlogType.hasMany(BlogType, {
+                foreignKey: 'parentId',
+                sourceKey: 'id',
+                as: 'subs'
+            })
+            BlogType.belongsTo(BlogType, {
+                foreignKey: 'parentId',
+                targetKey: 'id',
+                as: 'parent'
+            })
         }
     };
     BlogType.init({

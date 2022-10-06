@@ -376,6 +376,16 @@ export default class CollectionController {
                 status,
                 bannerInfo
             } = ctx.request.body;
+            let checkCollection = await Collection.findOne({
+                where:{
+                    link : link
+                }
+            });
+            if (checkCollection)
+            {
+                res.setError("Conflict link", Constant.instance.HTTP_CODE.Conflict);
+                return res.send(ctx);
+            }
             let collection = await Collection.create({
                 link,
                 mediafiles,

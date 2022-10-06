@@ -1,4 +1,7 @@
-import {BlogType, Blog} from '../models';
+import {
+    BlogType,
+    Blog
+} from '../models';
 import Logger from '../utils/logger';
 import Response from '../utils/response';
 import Constant from '../constants';
@@ -14,27 +17,66 @@ const res = new Response();
 export default class BLogTypeController {
     static async getListBlogTypes(ctx, next) {
         try {
-            const { popular } = ctx.request.query
-            let objectQuery = popular ? {
-                attributes: {
-                    include: [[Sequelize.fn("COUNT", Sequelize.col("blogs.id")), "countBlogs"]]
-                },
-                include: [
-                    {
-                        model: Blog,
-                        as:"blogs",
-                        attributes: []
+            const {
+                popular
+            } = ctx.request.query
+            if (popular) {
+                const listType = await Blog.findAll({
+                    attributes: ['type', Sequelize.literal(`COUNT('*')`)],
+                    group: ['type'],
+                    raw: true
+                });
+                let result = await BlogType.findAll({
+                    include: [{
+                        model: BlogType,
+                        as: "subs",
+                        attributes: ["name", "slug", "id"]
+                    }],
+                    where: {
+                        parentId: null
                     }
-                ],
-                group: ['BlogType.id'],
-                order: [[Sequelize.literal(' "countBlogs" '), 'DESC']]
-            } : {}
-            const result = await BlogType.findAll(objectQuery)
-            if (!result) {
-                res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);
-                return res.send(ctx);
+                });
+                result.forEach(e => {
+                    e.dataValues.countBlogs = listType.find(x => x.type == e.id) ? parseInt(listType.find(x => x.type == e.id).count) : 0;
+                    if (e.subs) {
+                        let extraCount = 0;
+                        e.subs.forEach(f => {
+                            f.dataValues.countBlogs = listType.find(x => x.type == f.id) ? parseInt(listType.find(x => x.type == f.id).count) : 0;
+                            extraCount += f.dataValues.countBlogs;
+                        });
+                        e.subs = e.subs.sort((a, b) => {
+                            return - a.dataValues.countBlogs + b.dataValues.countBlogs;
+                        })
+                        e.dataValues.countBlogs += extraCount;
+                    }
+                });
+                result = result.sort((a, b) => {
+                    return - a.dataValues.countBlogs + b.dataValues.countBlogs;
+                })
+                res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
+            } else {
+                const result = await BlogType.findAll({
+                    include: [{
+                        model: BlogType,
+                        as: "subs",
+                        attributes: ["name", "slug", "id"]
+                    }],
+                    where: {
+                        parentId: null
+                    },
+                    order: [
+                        ['id', 'ASC'],
+                        [{
+                                model: BlogType,
+                                as: 'subs'
+                            },
+                            'id',
+                            'ASC'
+                        ]
+                    ]
+                });
+                res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
             }
-            res.setSuccess(result, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('getListBlogTypes ' + e.message + ' ' + e.stack);
@@ -73,7 +115,9 @@ export default class BLogTypeController {
     }
     static async putUpdateBlogType(ctx, next) {
         try {
-            const { id } = ctx.request.params
+            const {
+                id
+            } = ctx.request.params
             const {
                 name,
                 slug
@@ -88,10 +132,10 @@ export default class BLogTypeController {
                 res.setError(`BlogType ${id} not found`, Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
-            if(name && name !== blogTypeOld.name) {
+            if (name && name !== blogTypeOld.name) {
                 updateInfo.name = name
             }
-            if(slug && buildSlug(slug) !== blogTypeOld.slug) {
+            if (slug && buildSlug(slug) !== blogTypeOld.slug) {
                 let checkDuplicateSlug = await BlogType.findOne({
                     where: {
                         slug: buildSlug(slug)
@@ -125,7 +169,9 @@ export default class BLogTypeController {
     }
     static async deleteBlogType(ctx, next) {
         try {
-            const { id } = ctx.request.params;
+            const {
+                id
+            } = ctx.request.params;
             let blogType = await BlogType.findOne({
                 where: {
                     id: id
@@ -135,12 +181,14 @@ export default class BLogTypeController {
                 res.setError(`BlogType ${id} not found`, Constant.instance.HTTP_CODE.NotFound);
                 return res.send(ctx);
             }
-           await BlogType.destroy({
+            await BlogType.destroy({
                 where: {
                     id: id
                 }
             })
-            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
+            res.setSuccess({
+                deleted: true
+            }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             Logger.error('deleteBlogType ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));

@@ -23,8 +23,9 @@ import {
     buildSlug
 } from '../utils/utils'
 import dayjs from 'dayjs'
-import {isEqual} from 'lodash'
-import {request} from "chai";
+import {
+    isEqual
+} from 'lodash'
 
 const res = new Response();
 
@@ -41,8 +42,7 @@ export default class BLogController {
                 let slugs = listIdsAndSlugs.filter(slug => isNaN(slug))
                 condition = {
                     ...condition,
-                    [Op.or]: [
-                        {
+                    [Op.or]: [{
                             id: {
                                 [Op.in]: ids
                             },
@@ -56,10 +56,63 @@ export default class BLogController {
                 }
             }
             if (query.name) {
-                condition.title = {
-                    [Op.iLike]: `%${query.name}%`
+                query.keyword = query.name;
+            }
+            if (query.keyword) {
+                let filterKeywords = await Promise.all([
+                    Tag.findAll({
+                        where: {
+                            title: Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('title')), {
+                                [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                            })
+                        },
+                        include: [{
+                            model: BlogToTag,
+                            as: 'listblogToTags'
+                        }]
+                    }), BlogType.findAll({
+                        where: {
+                            name: Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('name')), {
+                                [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                            })
+                        }
+                    })
+                ])
+                const orOperation = [{
+                    titleCheck: Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.literal('"Blog"."title"')),{
+                        [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                    })
+                }, {
+                    slugCheck: Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.literal('"Blog"."slug"')),{
+                        [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                    })
+                }]
+                if (filterKeywords[0] && filterKeywords[0].length > 0) {
+                    orOperation.push({
+                        id: {
+                            [Op.in]: [... new Set(filterKeywords[0].reduce((p,c)=>{
+                                return p.concat(c.listblogToTags.map(e=>e.tagId))
+                            },[]))]
+                        }
+                    })
+                }
+                if (filterKeywords[1] && filterKeywords[1].length > 0) {
+                    orOperation.push({
+                        type: {
+                            [Op.in]: filterKeywords[1].map(e=>e.id)
+                        }
+                    })
+                }
+                condition = {
+                    ...condition,
+                    [Op.or]: orOperation
                 }
             }
+            // if (query.name) {
+            //     condition.title = {
+            //         [Op.iLike]: `%${query.name}%`
+            //     }
+            // }
             if (query.type) {
                 condition.type = query.type;
             }
@@ -71,7 +124,7 @@ export default class BLogController {
                     [Op.between]: [dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString(), dayjs(query.dateTo, 'YYYYMMDD').endOf('day').toISOString()],
                 };
             }
-            if (query.dateFrom && !query.dateTo) {
+            if ((query.dateFrom && query.dateFrom !== 'null') && !query.dateTo) {
                 condition.createdAt = {
                     [Op.gte]: dayjs(query.dateFrom, 'YYYYMMDD').startOf('day').toISOString()
                 };
@@ -90,7 +143,7 @@ export default class BLogController {
                 tagCondition.id = query.tagId;
             }
             let order = [
-                ['publishAt', 'DESC']
+                ['createdAt', 'DESC']
             ];
             if (query.orderBy) {
                 switch (query.orderBy) {
@@ -107,29 +160,60 @@ export default class BLogController {
                 }
             }
             const pager = paging(query);
-            const result = await Blog.findAndCountAll(Object.assign({
-                where: condition,
-                order: order,
-                attributes: ['id', 'type', 'title', 'slug', 'status', 'createdBy', 'createdAt', 'updatedAt', 'publishAt', 'seoInfo', 'mediaFiles', 'preview'],
-                include: [{
-                    model: BlogType,
-                    as: 'blogTypeInfo',
-                    required: Object.keys(categoryCondition).length > 0 ? true : false,
-                    attributes: ['id', 'name', 'slug'],
-                    where: categoryCondition
-                },
-                    {
-                        model: Tag,
-                        as: 'tags',
-                        required: Object.keys(tagCondition).length > 0 ? true : false,
-                        where: tagCondition,
-                        attributes: ['id', 'title', 'link']
+            const result = await Promise.all([
+                Blog.findAndCountAll(Object.assign({
+                    where: condition,
+                    order: order,
+                    attributes: ['id', 'type', 'title', 'slug', 'status', 'createdBy', 'createdAt', 'updatedAt', 'publishAt', 'seoInfo', 'mediaFiles', 'preview', 'publishAt'],
+                    include: [{
+                            model: BlogType,
+                            as: 'blogTypeInfo',
+                            required: Object.keys(categoryCondition).length > 0 ? true : false,
+                            attributes: ['id', 'name', 'slug'],
+                            where: categoryCondition,
+                            include: [{
+                                model: BlogType,
+                                as: 'parent',
+                                attributes: ['id', 'name', 'slug'],
+                            }]
+                        },
+                        {
+                            model: Tag,
+                            as: 'tags',
+                            required: Object.keys(tagCondition).length > 0 ? true : false,
+                            where: tagCondition,
+                            attributes: ['id', 'title', 'link']
+                        },
+                        {
+                            model: User,
+                            as: 'creatorInfo',
+                            attributes: ['id', 'name'],
+                            required: false
+                        }
+                    ]
+                }, pager)), Blog.count({
+                    where: {
+                        status: Blog.STATUS.ACTIVE
                     }
-                ]
-            }, pager));
+                }), Blog.count({
+                    where: {
+                        status: Blog.STATUS.INACTIVE
+                    }
+                }), Blog.count({
+                    where: {
+                        status: Blog.STATUS.STOP
+                    }
+                })
+            ])
             res.setSuccess({
-                count: result.count,
-                list: result.rows
+                count: result[0] && result[0].count ? result[0].count : 0,
+                list: result[0] && result[0].rows ? result[0].rows : [],
+                extraCount: {
+                    totalCount: result[0] && result[0].count ? result[0].count : 0,
+                    active: result[1],
+                    inactive: result[2],
+                    stop: result[3]
+                }
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
@@ -141,7 +225,9 @@ export default class BLogController {
 
     static getBlogInfo = async (ctx, next) => {
         try {
-            let {id} = ctx.request.params;
+            let {
+                id
+            } = ctx.request.params;
             let condition = {};
             if (!isNaN(id)) {
                 // If id is number, search by id
@@ -153,14 +239,25 @@ export default class BLogController {
             let respBlogInfo = await Blog.findOne({
                 where: condition,
                 include: [{
-                    model: BlogType,
-                    as: 'blogTypeInfo',
-                    attributes: ['id', 'name']
-                },
+                        model: BlogType,
+                        as: 'blogTypeInfo',
+                        attributes: ['id', 'name'],
+                        include: [{
+                            model: BlogType,
+                            as: 'parent',
+                            attributes: ['id', 'name', 'slug'],
+                        }]
+                    },
                     {
                         model: Tag,
                         as: 'tags',
                         attributes: ['id', 'title', 'link']
+                    },
+                    {
+                        model: User,
+                        as: 'creatorInfo',
+                        attributes: ['id', 'name'],
+                        required: false
                     }
                 ],
             })
@@ -188,8 +285,11 @@ export default class BLogController {
                 seoInfo,
                 mediaFiles,
                 preview,
-                tagIds
+                tagIds,
+                bannerInfo
             } = ctx.request.body;
+
+            let user = null;
 
             let checkDuplicateSlug = await Blog.findOne({
                 where: {
@@ -231,7 +331,7 @@ export default class BLogController {
             let blog = await Blog.create({
                 type,
                 title,
-                slug: buildSlug(slug),
+                slug: slug ? buildSlug(slug) : `${buildSlug(title)}-${dayjs().unix()}`,
                 body,
                 status: status ? status : Blog.STATUS.ACTIVE,
                 publishAt,
@@ -239,6 +339,7 @@ export default class BLogController {
                 mediaFiles,
                 preview,
                 createdBy: ctx.state.user.id,
+                bannerInfo
             });
             if (blog) {
                 let listBlogToTags = await Promise.all(tagIds.map(async (tagId) => {
@@ -252,12 +353,10 @@ export default class BLogController {
                 where: {
                     id: blog.id
                 },
-                include: [
-                    {
-                        model: Tag,
-                        as: 'tags'
-                    }
-                ]
+                include: [{
+                    model: Tag,
+                    as: 'tags'
+                }]
             })
             res.setSuccess(blogNew, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);
@@ -269,19 +368,30 @@ export default class BLogController {
     }
     static putUpdateBlog = async (ctx, next) => {
         try {
-            const {id} = ctx.request.params
-            const {type, title, slug, body, status, publishAt, mediaFiles, preview, tagIds} = ctx.request.body || {};
+            const {
+                id
+            } = ctx.request.params
+            const {
+                type,
+                title,
+                slug,
+                body,
+                status,
+                publishAt,
+                mediaFiles,
+                preview,
+                tagIds,
+                bannerInfo
+            } = ctx.request.body || {};
             //const t = await db.sequelize.transaction();
             let blogOld = await Blog.findOne({
                 where: {
                     id: id
                 },
-                include: [
-                    {
-                        model: Tag,
-                        as: 'tags'
-                    }
-                ]
+                include: [{
+                    model: Tag,
+                    as: 'tags'
+                }]
             })
             let updateInfo = {};
             if (!blogOld) {
@@ -349,6 +459,9 @@ export default class BLogController {
             if (mediaFiles && !isEqual(mediaFiles, blogOld.mediaFiles)) {
                 updateInfo.mediaFiles = mediaFiles
             }
+            if (bannerInfo && !isEqual(bannerInfo, blogOld.bannerInfo)) {
+                updateInfo.bannerInfo = bannerInfo
+            }
             await Blog.update(updateInfo, {
                 where: {
                     id: id,
@@ -371,12 +484,10 @@ export default class BLogController {
                 where: {
                     id: id
                 },
-                include: [
-                    {
-                        model: Tag,
-                        as: 'tags'
-                    }
-                ]
+                include: [{
+                    model: Tag,
+                    as: 'tags'
+                }]
             })
             res.setSuccess(blogNew, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);
@@ -388,8 +499,12 @@ export default class BLogController {
     }
     static putUpdateSEOBlog = async (ctx, next) => {
         try {
-            const {id} = ctx.request.params
-            const {seoInfo} = ctx.request.body
+            const {
+                id
+            } = ctx.request.params
+            const {
+                seoInfo
+            } = ctx.request.body
             let updateInfo = {}
             let blogOld = await Blog.findOne({
                 where: {
@@ -409,12 +524,10 @@ export default class BLogController {
                 where: {
                     id: id
                 },
-                include: [
-                    {
-                        model: Tag,
-                        as: 'tags'
-                    }
-                ]
+                include: [{
+                    model: Tag,
+                    as: 'tags'
+                }]
             })
             res.setSuccess(blogNew, Constant.instance.HTTP_CODE.Created);
             return res.send(ctx);
@@ -427,7 +540,9 @@ export default class BLogController {
     static deleteBlog = async (ctx, next) => {
         const t = await db.sequelize.transaction();
         try {
-            const {id} = ctx.request.params
+            const {
+                id
+            } = ctx.request.params
             await Blog.destroy({
                 where: {
                     id: id,
@@ -441,7 +556,9 @@ export default class BLogController {
                 transaction: t,
             })
             await t.commit();
-            res.setSuccess({deleted: true}, Constant.instance.HTTP_CODE.Success);
+            res.setSuccess({
+                deleted: true
+            }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
             await t.rollback();

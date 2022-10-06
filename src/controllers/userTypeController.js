@@ -91,7 +91,7 @@ export default class UserTypeController {
             let pager = paging(query);
             const result = await UserType.findAndCountAll(Object.assign({
                 where: condition,
-                attributes: ["id", "name", "createdBy", "createdAt"],
+                attributes: ["id", "name", "status", "createdBy", "createdAt"],
                 order: order,
                 include: [{
                     model: User,
@@ -150,7 +150,12 @@ export default class UserTypeController {
             let userType = await UserType.findOne({
                 where: {
                     id: id
-                }
+                },
+                include: [{
+                    model: User,
+                    as: "createdByInfo",
+                    attributes: ["id", "name"]
+                }]
             });
             if (!userType) {
                 res.setError("Not found", Constant.instance.HTTP_CODE.NotFound);

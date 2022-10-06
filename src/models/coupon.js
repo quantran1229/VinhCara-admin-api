@@ -36,7 +36,7 @@ module.exports = (sequelize, DataTypes) => {
                     ['endTime', 'DESC NULLS LAST'],
                     ['startTime', 'ASC']
                 ],
-                attributes: ['id', 'code', 'gifts', 'discountPrice', 'discountPercent', 'couponType', 'minimumRequirement', 'desc', 'showValue', 'createdAt', 'startTime', 'endTime']
+                attributes: ['id', 'code', 'gifts', 'discountPrice', 'discountPercent', 'couponType', 'minimumRequirement', 'desc', 'showValue', 'createdAt', 'startTime', 'endTime', 'userType', 'status']
             }, pager));
             return {
                 count: result.count,
@@ -52,7 +52,12 @@ module.exports = (sequelize, DataTypes) => {
                 condition.code = id.toUpperCase();
             }
             return this.findOne({
-                where: condition
+                where: condition,
+                include: [{
+                    model: sequelize.models.User,
+                    as: 'creator',
+                    attributes: ['id', 'name']
+                }]
             })
         }
 
@@ -67,6 +72,11 @@ module.exports = (sequelize, DataTypes) => {
                         [Op.not]: models.Order.STATUS.CANCEL
                     }
                 },
+            });
+            Coupon.belongsTo(models.User, {
+                foreignKey: 'createdBy',
+                sourceKey: 'id',
+                as: 'creator'
             });
         }
     };
@@ -87,7 +97,14 @@ module.exports = (sequelize, DataTypes) => {
         couponType: DataTypes.INTEGER,
         meta: DataTypes.JSONB,
         desc: DataTypes.TEXT,
-        showValue: DataTypes.STRING
+        showValue: DataTypes.STRING,
+        giftText: DataTypes.STRING,
+        isTotalOrder: {
+            type: DataTypes.VIRTUAL,
+            get() {
+                return this.discountPrice?.value !== undefined || this.discountPercent?.value !== undefined || (this.minimumRequirement?.value !== undefined && this.type === Coupon.COUPON_TYPE.GIFT)
+            }
+        }
     }, {
         sequelize,
         tableName: 'coupons',

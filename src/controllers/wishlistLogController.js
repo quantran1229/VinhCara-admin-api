@@ -252,7 +252,7 @@ export default class WishlistController {
                     ['productCode', 'ASC']
                 ],
                 attributes: [
-                    ['productCode', 'id'], 'productCode', 'type', 'mediafiles', 'productName', 'mainCategory', 'productCategory', 'price'
+                    ['productCode', 'id'], 'productCode', 'type', 'mediafiles', 'productName', 'mainCategory', 'productCategory', 'price', 'slug'
                 ],
                 include: {
                     model: WishlistLog,

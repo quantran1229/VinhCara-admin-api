@@ -16,7 +16,7 @@ router.post('/blogs',validate({
     body: {
         slug: {
             type: 'string',
-            required: true
+            required: false
         },
         publishAt: {
             type: 'string',
@@ -24,9 +24,9 @@ router.post('/blogs',validate({
         },
         tagIds: {
             type: 'array',
-            required: true,
+            required: false,
             itemType: 'number',
-            min: 1
+            min: 0
         }
     }
 }), jwtValidate, BlogController.postCreateNewBlog)
@@ -38,7 +38,7 @@ router.put('/blogs/:id',validate({
             type: 'array',
             required: false,
             itemType: 'number',
-            min: 1
+            min: 0
         }
     }
 }), jwtValidate, BlogController.putUpdateBlog)

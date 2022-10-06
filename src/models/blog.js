@@ -27,6 +27,10 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'tags',
                 foreignKey: 'blogId',
             });
+            Blog.belongsTo(models.User, {
+                as: 'creatorInfo',
+                foreignKey: 'createdBy',
+            });
         }
     };
     Blog.init({
@@ -39,7 +43,8 @@ module.exports = (sequelize, DataTypes) => {
         publishAt: DataTypes.DATE,
         seoInfo: DataTypes.JSONB,
         mediaFiles: DataTypes.JSONB,
-        preview: DataTypes.STRING
+        preview: DataTypes.STRING,
+        bannerInfo: DataTypes.JSONB
     }, {
         sequelize,
         tableName: 'blogs',

@@ -102,6 +102,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'orderId',
         sourceKey: 'id',
         as: 'returnForms',
+      });
+      Order.belongsTo(models.StoreContact, {
+        foreignKey: 'storeId',
+        targetKey: 'id',
+        as: 'storeInfo',
       })
     }
   };
@@ -134,7 +139,8 @@ module.exports = (sequelize, DataTypes) => {
     meta: DataTypes.JSONB,
     note: DataTypes.TEXT,
     email: DataTypes.STRING,
-    membershipPhone: DataTypes.STRING
+    membershipPhone: DataTypes.STRING,
+    storeId: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'Order',

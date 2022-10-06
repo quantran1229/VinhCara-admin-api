@@ -15,17 +15,38 @@ import db, {
     Collection,
     Combo,
     NewJewellery,
-    WishlistLog,
     Stock,
-    StoreContact,
-    Location,
-    Diamond,
-    DiamondSerial
+    Category
 } from '../models';
 import {
     paging
 } from '../utils/utils';
+import dayjs from 'dayjs';
+import csvConverter from 'json-2-csv';
+import csv from 'csvtojson/v2';
+import multer from '@koa/multer';
+const storage = multer.memoryStorage();
 
+// Upload Limit
+const limit = {
+    fileSize: 10 * 1000000 // calculate by byte
+}
+
+// Filter only image + video
+function fileFilter(req, file, cb) {
+    let mimeType = file.mimetype;
+    let mainType = mimeType.split('/')[1];
+    if (mainType !== 'csv') {
+        return cb(null, false)
+    }
+    return cb(null, true)
+}
+
+const uploadSingle = multer({
+    storage: storage,
+    limit: limit,
+    fileFilter: fileFilter
+}).single("file")
 const res = new Response();
 
 export default class JewelleryController {
@@ -93,7 +114,8 @@ export default class JewelleryController {
                 keywords,
                 desc,
                 isShowOnWeb,
-                shape
+                shape,
+                isHiddenPrice
             } = ctx.request.body;
             let updateInfo = {}
             if (designForm && designForm != jewellery.designForm) {
@@ -113,6 +135,10 @@ export default class JewelleryController {
             }
             if (price && price != jewellery.price) {
                 updateInfo.price = price;
+            }
+            if (isHiddenPrice != undefined && isHiddenPrice != jewellery.isHiddenPrice) {
+                updateInfo.isHiddenPrice = isHiddenPrice;
+                if (isHiddenPrice) updateInfo.price = null;
             }
             if (extraProperties && extraProperties != jewellery.extraProperties) {
                 updateInfo.extraProperties = extraProperties;
@@ -134,6 +160,9 @@ export default class JewelleryController {
             }
             if (isShowOnWeb != undefined && isShowOnWeb != jewellery.isShowOnWeb) {
                 updateInfo.isShowOnWeb = isShowOnWeb;
+                if (isShowOnWeb) {
+                    updateInfo.showOnWebTime = dayjs().format();
+                }
             }
             if (shape && shape != jewellery.shape) {
                 updateInfo.shape = shape;
@@ -421,7 +450,7 @@ export default class JewelleryController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             let order = [
                 ['productName', 'ASC']
             ];
@@ -450,14 +479,52 @@ export default class JewelleryController {
                         break;
                     case 'priceASC':
                         order = [
-                            ['totalPrice', 'ASC']
+                            ['price', 'ASC NULLS FIRST']
                         ];
                         break;
                     case 'priceDESC':
                         order = [
-                            ['totalPrice', 'DESC']
+                            ['price', 'DESC NULLS LAST']
                         ];
                         break;
+                }
+            }
+
+            if (query.keyword) {
+                let keyword = removeAccent(query.keyword).toLowerCase();
+                condition = {
+                    ...condition,
+                    [Op.or]: [{
+                            productCode: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            productName: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            mainCategory: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            gemstone: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            shape: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            goldProperty: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }
+                    ]
                 }
             }
 
@@ -495,14 +562,13 @@ export default class JewelleryController {
                 };
             }
 
-            if (query.isShowOnWeb != undefined)
-            {
+            if (query.isShowOnWeb != undefined) {
                 condition.isShowOnWeb = query.isShowOnWeb == "true" ? true : false
             }
 
             let havingCondition = null;
             if (query.stockStatus != undefined) {
-                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 1' : ' = 0'}`);
+                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 0' : ' = 0'}`);
             }
             const pager = paging(query);
             let result = await Promise.all([query.stockStatus == undefined ? Jewellery.count({
@@ -537,7 +603,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], "isShowOnWeb", "createdAt", 'slug'
                 ],
                 duplicate: false,
                 include: [{
@@ -553,14 +619,19 @@ export default class JewelleryController {
                             type: JewellerySerial.TYPE.REAL
                         },
                         attributes: []
+                    },
+                    {
+                        model: Category,
+                        as: 'categoryInfo',
+                        required: false,
+                        attributes: ["mediafiles"]
                     }
                 ],
                 subQuery: false,
-                group: ['id', 'newProductInfo.productCode'],
+                group: ['id', 'newProductInfo.productCode', 'Jewellery.productCode'],
                 order: order,
                 having: havingCondition
-            }, pager)), Jewellery.count({
-            }),  Jewellery.count({
+            }, pager)), Jewellery.count({}), Jewellery.count({
                 where: {
                     isShowOnWeb: true
                 }
@@ -573,7 +644,7 @@ export default class JewelleryController {
             res.setSuccess({
                 count: result[0],
                 list: result[1],
-                extraCount:{
+                extraCount: {
                     totalCount: result[2],
                     totalShow: result[3],
                     totalHide: result[4]
@@ -591,7 +662,7 @@ export default class JewelleryController {
         try {
             const query = ctx.request.query;
             // Query
-            const condition = {};
+            let condition = {};
             let order = [
                 [{
                     model: NewJewellery,
@@ -638,6 +709,44 @@ export default class JewelleryController {
                 }, 'order', 'ASC']);
             }
 
+            if (query.keyword) {
+                let keyword = removeAccent(query.keyword).toLowerCase();
+                condition = {
+                    ...condition,
+                    [Op.or]: [{
+                            productCode: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            productName: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            mainCategory: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            gemstone: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            shape: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            goldProperty: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }
+                    ]
+                }
+            }
+
             if (query.type) {
                 condition.type = query.type
             }
@@ -671,10 +780,13 @@ export default class JewelleryController {
                     [Op.lte]: parseInt(query.priceTo)
                 };
             }
+            if (query.isShowOnWeb !== undefined) {
+                condition.isShowOnWeb = query.isShowOnWeb
+            }
 
             let havingCondition = null;
             if (query.stockStatus != undefined) {
-                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' > 1' : ' = 0'}`);
+                havingCondition = Sequelize.literal(`COUNT("serialList"."serial") ${query.stockStatus == 1 ? ' >= 1' : ' = 0'}`);
             }
             const pager = paging(query);
             let result = await Promise.all([query.stockStatus == undefined ? Jewellery.count({
@@ -724,7 +836,7 @@ export default class JewelleryController {
             }), Jewellery.findAll(Object.assign({
                 where: condition,
                 attributes: [
-                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"]
+                    ['productCode', 'id'], 'productOdooId', 'productCode', 'productName', 'mainCategory', 'mediafiles', 'productCategory', 'price', 'type', 'totalViews', 'desc', [Sequelize.fn("COUNT", Sequelize.col(`"serialList"."serial`)), "inStockCount"], 'slug'
                 ],
                 duplicate: false,
                 include: [{
@@ -747,11 +859,43 @@ export default class JewelleryController {
                 group: ['id', 'newProductInfo.productCode'],
                 order: order,
                 having: havingCondition
-            }, pager))]);
+            }, pager)), Jewellery.count({
+                include: [{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                    required: true,
+                    attributes: ['order']
+                }]
+            }), Jewellery.count({
+                where: {
+                    isShowOnWeb: true
+                },
+                include: [{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                    required: true,
+                    attributes: ['order']
+                }]
+            }), Jewellery.count({
+                where: {
+                    isShowOnWeb: false
+                },
+                include: [{
+                    model: NewJewellery,
+                    as: 'newProductInfo',
+                    required: true,
+                    attributes: ['order']
+                }]
+            })]);
             // Return list
             res.setSuccess({
                 count: result[0],
-                list: result[1]
+                list: result[1],
+                extraCount: {
+                    totalCount: result[2],
+                    totalShow: result[3],
+                    totalHide: result[4]
+                }
             }, Constant.instance.HTTP_CODE.Success);
             return res.send(ctx);
         } catch (e) {
@@ -768,6 +912,46 @@ export default class JewelleryController {
             // Query
             let condition = {}
             let conditionJewellery;
+
+            if (query.keyword) {
+                let [jewIdList, stockIdList] = await Promise.all([Jewellery.findAll({
+                    where: {
+                        [Op.or]: [Sequelize.where(Sequelize.fn('UNACCENT', Sequelize.col('productName')), {
+                            [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                        }), {
+                            productCode: {
+                                [Op.iLike]: `%${query.keyword}%`
+                            }
+                        }, {
+                            mainCategory: {
+                                [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                            }
+                        }]
+                    },
+                    attributes: ["productOdooId"]
+                }), Stock.findAll({
+                    where: {
+                        name: {
+                            [Op.iLike]: `%${removeAccent(query.keyword)}%`
+                        }
+                    }
+                })]);
+                condition = {
+                    [Op.or]: [{
+                        serial: {
+                            [Op.iLike]: `%${query.keyword}%`
+                        }
+                    }, {
+                        productOdooId: {
+                            [Op.in]: jewIdList.map(e => e.productOdooId)
+                        }
+                    }, {
+                        stockId: {
+                            [Op.in]: stockIdList.map(e => e.id)
+                        }
+                    }]
+                }
+            }
             if (query.serial) {
                 condition.serial = {
                     [Op.iLike]: `%${serial}%`
@@ -804,11 +988,54 @@ export default class JewelleryController {
             }
 
             if (query.type) {
-                condition.type = query.type
+                if (!conditionJewellery) conditionJewellery = {}
+                conditionJewellery.type = query.type
             }
+
+            if (query.stockId) {
+                condition.stockId = query.stockId
+            }
+
+            if (query.status) {
+                condition.status = query.status
+            }
+
+            let order = [
+                ['stockId', 'DESC']
+            ];
+            if (query.orderBy) {
+                switch (query.orderBy) {
+                    case 'stockIdDESC':
+                        order = [
+                            ['stockId', 'DESC']
+                        ];
+                        break;
+                    case 'stockIdASC':
+                        order = [
+                            ['stockId', 'ASC']
+                        ];
+                        break;
+                }
+            }
+
+            if (query.stockStatus !== undefined) {
+                if (query.stockStatus == 1) {
+                    condition.status = 1;
+                    condition.type = JewellerySerial.TYPE.REAL
+                } else {
+                    Object.assign(condition, {
+                        [Op.not]: {
+                            status: 1,
+                            type: JewellerySerial.TYPE.REAL
+                        }
+                    })
+                }
+            }
+
             const pager = paging(query);
             let result = await JewellerySerial.findAndCountAll(Object.assign({
                 where: condition,
+                order: order,
                 include: [{
                     model: Jewellery,
                     as: 'generalInfo',
@@ -922,14 +1149,27 @@ export default class JewelleryController {
             }
             transaction = await db.sequelize.transaction();
             for (let i of list) {
-                let x = await NewJewellery.findOne({
+                let y = await NewJewellery.findOne({
                     where: {
-                        order: i.order
+                        productCode: i.productCode
                     }
                 });
-                if (x) await x.destroy({
-                    transaction
-                });
+                if (y) {
+                    await y.update({
+                        order: i.order
+                    }, {
+                        transaction
+                    });
+                    continue;
+                }
+                // let x = await NewJewellery.findOne({
+                //     where: {
+                //         order: i.order
+                //     }
+                // });
+                // if (x) await x.destroy({
+                //     transaction
+                // });
                 await NewJewellery.create({
                     productCode: i.productCode,
                     order: i.order
@@ -961,6 +1201,199 @@ export default class JewelleryController {
             return res.send(ctx);
         } catch (e) {
             Logger.error('postJewelleryNewOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static getListNewJewelleryOrder = async (ctx, next) => {
+        try {
+            const newProducts = await NewJewellery.findAll()
+            res.setSuccess(newProducts, Constant.instance.HTTP_CODE.Success);
+            return res.send(ctx);
+        } catch (e) {
+            Logger.error('getListNewJewelleryOrder ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static exportJewelleryList = async (ctx, next) => {
+        try {
+            const query = ctx.request.query;
+            // Query
+            let condition = {};
+            let order = [
+                ['productName', 'ASC']
+            ];
+
+            if (query.keyword) {
+                let keyword = removeAccent(query.keyword).toLowerCase();
+                condition = {
+                    ...condition,
+                    [Op.or]: [{
+                            productCode: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            productName: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            mainCategory: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            gemstone: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            shape: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        },
+                        {
+                            goldProperty: {
+                                [Op.iLike]: `%${keyword}%`
+                            }
+                        }
+                    ]
+                }
+            }
+
+            if (query.type) {
+                condition.type = query.type
+            }
+
+            if (query.category) {
+                if (query.category.includes('-')) {
+                    condition.category = Sequelize.literal(`'${removeAccent(query.category.trim().toLowerCase())}' = ANY("productCategorySlug")`)
+                } else
+                    condition.category = Sequelize.literal(`'${query.category}' = ANY("productCategory")`);
+            }
+
+            if (query.productCode) {
+                const list = query.productCode.split(',');
+                condition.productCode = {
+                    [Op.in]: list
+                };
+            }
+
+            if (query.priceFrom != null && query.priceTo != null) {
+                condition.price = {
+                    [Op.between]: [parseInt(query.priceFrom) || 0, parseInt(query.priceTo) || 0]
+                };
+            } else
+            if (query.priceFrom) {
+                condition.price = {
+                    [Op.gte]: parseInt(query.priceFrom)
+                };
+            } else
+            if (query.priceTo) {
+                condition.price = {
+                    [Op.lte]: parseInt(query.priceTo)
+                };
+            }
+
+            if (query.isShowOnWeb != undefined) {
+                condition.isShowOnWeb = query.isShowOnWeb == "true" ? true : false
+            }
+
+            let list = await Jewellery.findAll({
+                where: condition,
+                attributes: [
+                    'productCode', 'productName', "isShowOnWeb", "isHiddenPrice"
+                ],
+            });
+            const data = await csvConverter.json2csvAsync(list.map(e => {
+                return {
+                    productCode: e.productCode,
+                    productName: e.productName,
+                    isShowOnWeb: e.isShowOnWeb ? 1 : 0,
+                    isHiddenPrice: e.isHiddenPrice ? 1 : 0
+                }
+            }));
+
+            // Return list
+            ctx.set('Content-disposition', 'attachment; filename=jewellery.csv');
+            ctx.set('Content-Type', 'text/csv');
+            ctx.body = data;
+            return ctx;
+        } catch (e) {
+            Logger.error('getJewelleryList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
+            res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
+            return res.send(ctx);
+        }
+    }
+
+    static importJewelleryList = async (ctx, next) => {
+        try {
+            await uploadSingle(ctx, next);
+            let data = await csv().fromString(ctx.file.buffer.toString('utf-8'));
+            const originalData = JSON.parse(JSON.stringify(data));
+            let isFileWrongFormat = false;
+            if (!data[0] || JSON.stringify(Object.keys(data[0]).sort()) != JSON.stringify(['isHiddenPrice', 'isShowOnWeb', 'productCode', 'productName'])) {
+                isFileWrongFormat = true;
+                console.log(Object.keys(data[0]).sort())
+                res.setSuccess({
+                    isFileWrongFormat: isFileWrongFormat,
+                    message: `File header must have 'productCode', 'productName', 'isShowOnWeb', 'isHiddenPrice'`,
+                    success: 0,
+                    failed: data.length,
+                });
+                return res.send(ctx)
+            }
+            const checkExisted = await Jewellery.findAll({
+                where: {
+                    productCode: {
+                        [Op.in]: data.map(e => e.productCode)
+                    }
+                },
+                attributes: ['productCode']
+            });
+            const notFound = data.filter(e => !checkExisted.find(x => x.dataValues.productCode == e.productCode)).map(e => e.productCode);
+            const wrongValue = data.filter(e => {
+                return (e.isShowOnWeb != 1 && e.isShowOnWeb != 0) || (e.isHiddenPrice != 1 && e.isHiddenPrice != 0)
+            }).map(e => e.productCode);
+            data = data.filter(e => {
+
+                return !(notFound.find(x => x == e.productCode) || wrongValue.find(x => x == e.productCode))
+            });
+            await Promise.all(data.map(async (jew) => {
+                await Jewellery.update({
+                    isShowOnWeb: parseInt(jew.isShowOnWeb) == 1 ? true : false,
+                    isHiddenPrice: parseInt(jew.isHiddenPrice) == 1 ? true : false,
+                }, {
+                    where: {
+                        productCode: jew.productCode
+                    }
+                })
+            }))
+            res.setSuccess({
+                isFileWrongFormat: isFileWrongFormat,
+                success: data.length,
+                failed: notFound.length + wrongValue.length,
+                notFound: notFound.map(e => {
+                    return {
+                        productCode: e,
+                        line: originalData.findIndex(x => x.productCode == e) + 2
+                    }
+                }),
+                wrongValue: wrongValue.map(e => {
+                    return {
+                        productCode: e,
+                        line: originalData.findIndex(x => x.productCode == e) + 2
+                    }
+                }),
+                message: `Success: ${data.length} Failed: ${notFound.length + wrongValue.length}`
+            });
+            return res.send(ctx)
+        } catch (e) {
+            Logger.error('getJewelleryList ' + e.message + ' ' + e.stack + ' ' + (e.errors && e.errors[0] ? e.errors[0].message : ''));
             res.setError(`Error`, Constant.instance.HTTP_CODE.InternalError, null, Constant.instance.ERROR_CODE.SERVER_ERROR);
             return res.send(ctx);
         }

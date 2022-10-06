@@ -15,9 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     static getInfo(id,check) {
-      let condition = {
-        status: this.STATUS.ACTIVE
-      }
+      let condition = {};
       if (!isNaN(id)) {
         condition.id = id;
       } else {
@@ -37,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
         order: orderBy || [
           ['createdAt', 'DESC']
         ],
-        attributes: ['id', 'name', 'mediafiles', 'link'],
+        attributes: ['id', 'name', 'mediafiles', 'link', 'status', 'createdAt'],
       }, pager));
       return {
         count: result.count,
@@ -63,11 +61,6 @@ module.exports = (sequelize, DataTypes) => {
     sequelize,
     modelName: 'Combo',
     tableName: 'combo',
-    defaultScope: {
-      where: {
-        status: combo.STATUS.ACTIVE
-      }
-    }
   });
   return combo;
 };

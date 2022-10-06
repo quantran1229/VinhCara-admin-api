@@ -30,6 +30,12 @@ module.exports = (sequelize, DataTypes) => {
         targetKey: 'id',
         as: 'parent'
       });
+
+      Category.hasMany(models.Jewellery,{
+        foreignKey: 'mainCategory',
+        sourceKey: 'name',
+        as: 'jewellery'
+      });
     }
   };
   Category.init({
@@ -46,11 +52,6 @@ module.exports = (sequelize, DataTypes) => {
     modelName: 'Category',
     tableName: 'categories',
     timestamps: false,
-    defaultScope: {
-      where: {
-        status: Category.STATUS.ACTIVE
-      }
-    }
   });
   return Category;
 };

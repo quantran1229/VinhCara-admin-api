@@ -146,7 +146,7 @@ module.exports = (sequelize, DataTypes) => {
             }
           },
           attributes: [
-            ['productCode', 'id'], 'productCode', 'mediafiles', 'productName', 'mainCategory', 'type', 'price'
+            ['productCode', 'id'], 'productCode', 'mediafiles', 'productName', 'mainCategory', 'type', 'price', 'slug'
           ],
           include: [{
             model: sequelize.models.JewellerySerial,

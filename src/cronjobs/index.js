@@ -13,6 +13,11 @@ import Logger from '../utils/logger';
 import {
     Op
 } from 'sequelize';
+import {
+    generateSitemap
+} from '../scripts/sitemapGenerator';
+import axios from 'axios'
+import Constant from '../constants';
 // ALL CRON JOB HERE
 
 //Check 30 mins after VNPay
@@ -77,12 +82,12 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
             isShowOnWeb: true,
             isLuxury: false
         },
-        attributes: ['productCode', 'price', 'type'],
+        attributes: ['productCode', 'price', 'type', 'isHiddenPrice'],
         include: [{
             model: JewellerySerial,
             as: 'serialList',
             required: false,
-            attributes: ['type', 'price', 'gender','size']
+            attributes: ['type', 'price', 'gender', 'size']
         }],
         order: [
             [{
@@ -97,7 +102,15 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
         logging: false
     });
     for (let jew of list) {
-        if (jew.serialList.length > 0) {
+        if (jew.isHiddenPrice && jew.price != null) {
+            await jew.update({
+                price: null
+            }, {
+                logging: false
+            });
+            continue
+        }
+        if (jew.serialList.length > 0 && !jew.isHiddenPrice) {
             if (jew.type == Jewellery.TYPE.DOUBLE) {
                 let price = (jew.serialList.find(e => e.gender == 1) ? parseInt(jew.serialList.find(e => e.gender == 1).price) : 0) + (jew.serialList.find(e => e.gender == 2) ? parseInt(jew.serialList.find(e => e.gender == 2).price) : 0);
                 await jew.update({
@@ -107,12 +120,12 @@ var recalculatePrice = new CronJob('*/30 * * * * *', async function () {
                 });
             } else {
                 if (jew.price != jew.serialList[0].price)
-                await jew.update({
-                    price: jew.serialList[0].price,
-                    size: jew.serialList[0].size
-                }, {
-                    logging: false
-                })
+                    await jew.update({
+                        price: jew.serialList[0].price,
+                        size: jew.serialList[0].size
+                    }, {
+                        logging: false
+                    })
             }
         } else {
             await jew.update({
@@ -129,13 +142,16 @@ recalculatePrice.start();
 
 // Activate Coupon
 var activateCoupon = new CronJob('0 * * * * *', async function () {
-    Logger.info("Start check for Coupon to start");
+    Logger.info("Start check for activate Coupon");
     let coupons = await Coupon.findAll({
         where: {
             status: Coupon.STATUS.INACTIVE,
             endTime: {
-                [Op.not]: null,
-                [Op.lte]: dayjs().add(-1, 's').toISOString()
+                [Op.or]: [{
+                    [Op.not]: null,
+                }, {
+                    [Op.gte]: dayjs().add(-1, 's').toISOString()
+                }]
             }
         }
     });
@@ -163,6 +179,42 @@ var activateCoupon = new CronJob('0 * * * * *', async function () {
 });
 
 activateCoupon.start();
+
+// Deactivate Coupon
+var deactivateCoupon = new CronJob('0 * * * * *', async function () {
+    Logger.info("Start check for deactivated Coupon");
+    let coupons = await Coupon.findAll({
+        where: {
+            status: Coupon.STATUS.ACTIVE,
+            endTime: {
+                [Op.lte]: dayjs().add(-1, 's').toISOString()
+            }
+        },
+    });
+    if (coupons.length > 0) {
+        let transaction;
+        try {
+            transaction = await db.sequelize.transaction();
+            await Coupon.update({
+                status: Coupon.STATUS.FINISHED
+            }, {
+                where: {
+                    id: {
+                        [Op.in]: coupons.map(e => e.id)
+                    }
+                },
+                transaction
+            })
+            await transaction.commit();
+            Logger.info("Total deactivate coupons: " + coupons.length)
+        } catch (err) {
+            await transaction.rollback();
+            Logger.error('cron: activateCoupon ' + err.message + ' ' + err.stack + ' ' + (err.errors && err.errors[0] ? err.errors[0].message : ''));
+        }
+    }
+});
+
+deactivateCoupon.start();
 
 var activateBlog = new CronJob('0 * * * * *', async function () {
     Logger.info("Start check for blog to start");
@@ -198,3 +250,18 @@ var activateBlog = new CronJob('0 * * * * *', async function () {
     }
 });
 activateBlog.start();
+
+//Sitemap generation
+var regenerateSitemap = new CronJob('* */20 * * * *', async function () {
+    await generateSitemap();
+});
+
+regenerateSitemap.start();
+
+// Ping to crawler
+//Sitemap generation
+var pingCrawler = new CronJob('0 0 */6 * * *', async function () {
+    await Promise.all([axios.get(`https://www.google.com/ping?sitemap=${Constant.instance.WEB_PUBLIC_URL}/sitemap/sitemap.xml`)]);
+});
+
+pingCrawler.start();
