@@ -20,7 +20,7 @@ export default class MembershipController {
     static getMembershipList = async (ctx, next) => {
         try {
             let list = await Membership.findAll({
-                attributes: ['id', 'name', 'point', 'percentDiscount']
+                attributes: ['id', 'name', 'point', 'percentDiscount','percentDiaDiscount']
             })
             // Return info
             res.setSuccess(list, Constant.instance.HTTP_CODE.Success);
@@ -44,7 +44,7 @@ export default class MembershipController {
                 include: [{
                     model: Membership,
                     as: 'membershipInfo',
-                    attributes: ['id', 'name', 'percentDiscount']
+                    attributes: ['id', 'name', 'percentDiscount','percentDiaDiscount']
                 }]
             })
             if (!membershipInfo) {
